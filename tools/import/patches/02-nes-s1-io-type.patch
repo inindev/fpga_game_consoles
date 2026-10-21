@@ -1,0 +1,18 @@
+# Button s1: add IO_TYPE=LVCMOS33. Gowin >= 1.9.10 defaults to LVCMOS18, which conflicts with the 3.3 V bank (CT1108/CT1136).
+#
+--- a/boards/tang-nano-20k/nes/nes.cst
++++ b/boards/tang-nano-20k/nes/nes.cst
+@@ -1,3 +1,4 @@
++// Modified for retro-fpga (2026-10-21): IO_TYPE=LVCMOS33 on s1 (Gowin >= 1.9.10 defaults to LVCMOS18). See SOURCES.md.
+ //Copyright (C)2014-2023 Gowin Semiconductor Corporation.
+ //All rights reserved. 
+ //File Title: Physical Constraints file
+@@ -12,7 +13,7 @@
+ // IO_LOC "reset2" 48;
+ // IO_PORT "reset2" PULL_MODE=DOWN BANK_VCCIO=3.3;
+ IO_LOC "s1" 88;
+-IO_PORT "s1" PULL_MODE=NONE BANK_VCCIO=3.3;
++IO_PORT "s1" IO_TYPE=LVCMOS33 PULL_MODE=NONE BANK_VCCIO=3.3;
+ 
+ // UART
+ IO_LOC "UART_TXD" 69;

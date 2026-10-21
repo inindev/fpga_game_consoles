@@ -1,0 +1,14 @@
+# Button s0: add IO_TYPE=LVCMOS33. Gowin >= 1.9.10 defaults to LVCMOS18, which conflicts with the 3.3 V bank (CT1108/CT1136).
+#
+--- a/boards/tang-nano-20k/snes/snes.cst
++++ b/boards/tang-nano-20k/snes/snes.cst
+@@ -1,7 +1,8 @@
++// Modified for retro-fpga (2026-10-21): IO_TYPE=LVCMOS33 on s0 (Gowin >= 1.9.10 defaults to LVCMOS18). See SOURCES.md.
+ IO_LOC "sys_clk" 4;
+ IO_PORT "sys_clk" IO_TYPE=LVCMOS33 PULL_MODE=NONE BANK_VCCIO=3.3;
+ IO_LOC "s0" 88;
+-IO_PORT "s0" PULL_MODE=NONE BANK_VCCIO=3.3;
++IO_PORT "s0" IO_TYPE=LVCMOS33 PULL_MODE=NONE BANK_VCCIO=3.3;
+ 
+ // UART
+ IO_LOC "UART_RXD" 70;
