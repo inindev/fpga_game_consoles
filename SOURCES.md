@@ -72,7 +72,6 @@ were written for retro-fpga.
 | `platform/input/usb_hid_host/usb_hid_host.v` | nestang `869140c` | `src/usb_hid_host.v` |  |  |
 | `platform/input/usb_hid_host/usb_hid_host_rom.hex` | nestang `869140c` | `src/usb_hid_host_rom.hex` |  |  |
 | `platform/input/usb_hid_host/usb_hid_host_rom.v` | nestang `869140c` | `src/usb_hid_host_rom.v` |  |  |
-| `platform/io/hw_uart.v` | nestang `869140c` | `src/hw_uart.v` | not instantiated; kept for byte-identical import |  |
 | `platform/io/uart_tx_v2.v` | nestang `869140c` | `src/uart_tx_V2.v` | identical in snestang v0.9 |  |
 | `platform/iosys/gowin_dpb_menu.ipc` | nestang `869140c` | `src/iosys/gowin_dpb_menu.ipc` | settings for gowin_dpb_menu.v (identical in snestang v0.9) |  |
 | `platform/iosys/gowin_dpb_menu.mod` | nestang `869140c` | `src/iosys/gowin_dpb_menu.mod` | GowinModGen input for gowin_dpb_menu.v (identical in snestang v0.9) |  |
@@ -119,7 +118,6 @@ were written for retro-fpga.
 | `systems/nes/chips/rp2a03/cpu6502/t65_mcode.v` | nestang `869140c` | `src/t65/T65_MCode.v` |  |  |
 | `systems/nes/chips/rp2a03/cpu6502/t65_pack.v` | nestang `869140c` | `src/t65/T65_Pack.v` |  |  |
 | `systems/nes/chips/rp2c02/ppu.v` | nestang `869140c` | `src/ppu.v` |  |  |
-| `systems/nes/compat.v` | nestang `869140c` | `src/compat.v` | not instantiated; kept for byte-identical import |  |
 | `systems/nes/nes.v` | nestang `869140c` | `src/nes.v` |  |  |
 | `systems/snes/cartridge/enhancement/dsp/dsp11b23410_d.hex` | snestang `58bb70a` | `src/chip/DSP/dsp11b23410_d.hex` |  |  |
 | `systems/snes/cartridge/enhancement/dsp/dsp11b23410_p.hex` | snestang `58bb70a` | `src/chip/DSP/dsp11b23410_p.hex` |  |  |

@@ -39,7 +39,6 @@ platform/input/snes/controller_snes.v	snestang	58bb70aba31eb3055aceba910dc1d5c40
 platform/input/usb_hid_host/usb_hid_host.v	nestang	869140ca36953e6f0395de357a86c90823f84585	src/usb_hid_host.v	
 platform/input/usb_hid_host/usb_hid_host_rom.hex	nestang	869140ca36953e6f0395de357a86c90823f84585	src/usb_hid_host_rom.hex	
 platform/input/usb_hid_host/usb_hid_host_rom.v	nestang	869140ca36953e6f0395de357a86c90823f84585	src/usb_hid_host_rom.v	
-platform/io/hw_uart.v	nestang	869140ca36953e6f0395de357a86c90823f84585	src/hw_uart.v	not instantiated; kept for byte-identical import
 platform/io/uart_tx_v2.v	nestang	869140ca36953e6f0395de357a86c90823f84585	src/uart_tx_V2.v	identical in snestang v0.9
 platform/iosys/gowin_dpb_menu.ipc	nestang	869140ca36953e6f0395de357a86c90823f84585	src/iosys/gowin_dpb_menu.ipc	settings for gowin_dpb_menu.v (identical in snestang v0.9)
 platform/iosys/gowin_dpb_menu.mod	nestang	869140ca36953e6f0395de357a86c90823f84585	src/iosys/gowin_dpb_menu.mod	GowinModGen input for gowin_dpb_menu.v (identical in snestang v0.9)
@@ -81,7 +80,6 @@ systems/nes/chips/rp2a03/cpu6502/t65_alu.v	nestang	869140ca36953e6f0395de357a86c
 systems/nes/chips/rp2a03/cpu6502/t65_mcode.v	nestang	869140ca36953e6f0395de357a86c90823f84585	src/t65/T65_MCode.v	
 systems/nes/chips/rp2a03/cpu6502/t65_pack.v	nestang	869140ca36953e6f0395de357a86c90823f84585	src/t65/T65_Pack.v	
 systems/nes/chips/rp2c02/ppu.v	nestang	869140ca36953e6f0395de357a86c90823f84585	src/ppu.v	
-systems/nes/compat.v	nestang	869140ca36953e6f0395de357a86c90823f84585	src/compat.v	not instantiated; kept for byte-identical import
 systems/nes/nes.v	nestang	869140ca36953e6f0395de357a86c90823f84585	src/nes.v	
 systems/snes/cartridge/enhancement/dsp/dsp11b23410_d.hex	snestang	58bb70aba31eb3055aceba910dc1d5c407da853b	src/chip/DSP/dsp11b23410_d.hex	
 systems/snes/cartridge/enhancement/dsp/dsp11b23410_p.hex	snestang	58bb70aba31eb3055aceba910dc1d5c407da853b	src/chip/DSP/dsp11b23410_p.hex	
