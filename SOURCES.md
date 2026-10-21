@@ -66,9 +66,8 @@ were written for retro-fpga.
 | `platform/input/autofire.v` | nestang `869140c` | `src/autofire.v` |  |  |
 | `platform/input/controller_adapter.sv` | snestang `58bb70a` | `src/controller_adapter.sv` |  |  |
 | `platform/input/controller_ds2.sv` | nestang `869140c` | `src/controller_ds2.sv` | identical in snestang v0.9 |  |
+| `platform/input/controller_snes.v` | nestang `869140c` | `src/controller_snes.v` | auto-detects NES vs SNES pads; used by both cores (replaces snestang v0.9 version) |  |
 | `platform/input/dualshock_controller.v` | nestang `869140c` | `src/dualshock_controller.v` | identical in snestang v0.9 |  |
-| `platform/input/nes/controller_snes.v` | nestang `869140c` | `src/controller_snes.v` | auto-detects NES vs SNES pads |  |
-| `platform/input/snes/controller_snes.v` | snestang `58bb70a` | `src/controller_snes.v` | to be replaced by the NES version |  |
 | `platform/input/usb_hid_host/usb_hid_host.v` | nestang `869140c` | `src/usb_hid_host.v` |  |  |
 | `platform/input/usb_hid_host/usb_hid_host_rom.hex` | nestang `869140c` | `src/usb_hid_host_rom.hex` |  |  |
 | `platform/input/usb_hid_host/usb_hid_host_rom.v` | nestang `869140c` | `src/usb_hid_host_rom.v` |  |  |

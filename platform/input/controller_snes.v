@@ -1,3 +1,5 @@
+// Modified for retro-fpga (2026-10-21): shared by the NES and SNES cores (was NES-only);
+// sized the zero padding in the NES-pad case ({4'b0000, ...}). See git history.
 // A self-scanning SNES/NES controller interface
 module controller_snes #(
     parameter FREQ = 21_500_000         // frequency of clk
@@ -111,7 +113,14 @@ always @(posedge clk) begin
                 bits <= bits + 1;
                 if (bits == 4'd15) begin     // scan complete
                     state <= 3;
-                    buttons <= buttons_buf[11:0];
+                    // check if buttons_buf[15:12] are 0; if not, this is an NES controller
+                    if (buttons_buf[15:12] != 4'b0000) begin
+                        // NES controller
+                        buttons <= {4'b0000, buttons_buf[7:0]};
+                    end else begin
+                        // SNES controller
+                        buttons <= buttons_buf[11:0];
+                    end
                 end else
                     state <= 1;
             end
