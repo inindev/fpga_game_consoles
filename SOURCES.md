@@ -25,11 +25,15 @@ were written for retro-fpga.
 |---|---|---|---|---|
 | `boards/tang-nano-20k/gowin_pll_hdmi.v` | nestang `869140c` | `src/nano20k/gowin_pll_hdmi.v` | identical in snestang v0.9; Gowin-generated |  |
 | `boards/tang-nano-20k/nes/config.v` | nestang `869140c` | `src/nano20k/config.v` |  |  |
+| `boards/tang-nano-20k/nes/gowin_pll_nes.ipc` | nestang `869140c` | `src/nano20k/gowin_pll_nes.ipc` | Gowin IP generator settings for gowin_pll_nes.v |  |
+| `boards/tang-nano-20k/nes/gowin_pll_nes.mod` | nestang `869140c` | `src/nano20k/gowin_pll_nes.mod` | GowinModGen input for gowin_pll_nes.v (-path is the author's) |  |
 | `boards/tang-nano-20k/nes/gowin_pll_nes.v` | nestang `869140c` | `src/nano20k/gowin_pll_nes.v` | Gowin-generated |  |
 | `boards/tang-nano-20k/nes/nes.cst` | nestang `869140c` | `src/nano20k/nestang.cst` |  | `02-nes-s1-io-type.patch` |
 | `boards/tang-nano-20k/nes/nes.sdc` | nestang `869140c` | `src/nano20k/nestang.sdc` |  |  |
 | `boards/tang-nano-20k/nes/top.sv` | nestang `869140c` | `src/nestang_top.sv` |  |  |
 | `boards/tang-nano-20k/snes/config.v` | snestang `58bb70a` | `src/nano20k/config.v` |  |  |
+| `boards/tang-nano-20k/snes/gowin_pll_snes.ipc` | snestang `58bb70a` | `src/nano20k/gowin_pll_snes.ipc` | Gowin IP generator settings for gowin_pll_snes.v |  |
+| `boards/tang-nano-20k/snes/gowin_pll_snes.mod` | snestang `58bb70a` | `src/nano20k/gowin_pll_snes.mod` | GowinModGen input for gowin_pll_snes.v (-path is the author's) |  |
 | `boards/tang-nano-20k/snes/gowin_pll_snes.v` | snestang `58bb70a` | `src/nano20k/gowin_pll_snes.v` | Gowin-generated |  |
 | `boards/tang-nano-20k/snes/snes.cst` | snestang `58bb70a` | `src/nano20k/snestang.cst` |  | `03-snes-s0-io-type.patch` |
 | `boards/tang-nano-20k/snes/snes.sdc` | snestang `58bb70a` | `src/snestang.sdc` |  |  |
@@ -70,6 +74,8 @@ were written for retro-fpga.
 | `platform/input/usb_hid_host/usb_hid_host_rom.v` | nestang `869140c` | `src/usb_hid_host_rom.v` |  |  |
 | `platform/io/hw_uart.v` | nestang `869140c` | `src/hw_uart.v` | not instantiated; kept for byte-identical import |  |
 | `platform/io/uart_tx_v2.v` | nestang `869140c` | `src/uart_tx_V2.v` | identical in snestang v0.9 |  |
+| `platform/iosys/gowin_dpb_menu.ipc` | nestang `869140c` | `src/iosys/gowin_dpb_menu.ipc` | settings for gowin_dpb_menu.v (identical in snestang v0.9) |  |
+| `platform/iosys/gowin_dpb_menu.mod` | nestang `869140c` | `src/iosys/gowin_dpb_menu.mod` | GowinModGen input for gowin_dpb_menu.v (identical in snestang v0.9) |  |
 | `platform/iosys/nes/gowin_dpb_menu.v` | nestang `869140c` | `src/iosys/gowin_dpb_menu.v` |  |  |
 | `platform/iosys/nes/iosys.v` | nestang `869140c` | `src/iosys/iosys.v` |  |  |
 | `platform/iosys/nes/textdisp.v` | nestang `869140c` | `src/iosys/textdisp.v` |  |  |
@@ -139,6 +145,8 @@ were written for retro-fpga.
 | `systems/snes/chips/s-cpu_5a22/cpu.v` | snestang `58bb70a` | `src/cpu.v` |  |  |
 | `systems/snes/chips/s-dsp/dsp.v` | snestang `58bb70a` | `src/dsp.v` |  |  |
 | `systems/snes/chips/s-dsp/dsp.vh` | snestang `58bb70a` | `src/dsp.vh` |  |  |
+| `systems/snes/chips/s-ppu/gowin_dpb_cgram.ipc` | snestang `58bb70a` | `src/gowin_dpb_cgram.ipc` | Gowin IP generator settings for gowin_dpb_cgram.v |  |
+| `systems/snes/chips/s-ppu/gowin_dpb_cgram.mod` | snestang `58bb70a` | `src/gowin_dpb_cgram.mod` | GowinModGen input for gowin_dpb_cgram.v |  |
 | `systems/snes/chips/s-ppu/gowin_dpb_cgram.v` | snestang `58bb70a` | `src/gowin_dpb_cgram.v` | Gowin-generated |  |
 | `systems/snes/chips/s-ppu/gowin_dpb_hoam.v` | snestang `58bb70a` | `src/gowin_dpb_hoam.v` | Gowin-generated |  |
 | `systems/snes/chips/s-ppu/gowin_dpb_oam.v` | snestang `58bb70a` | `src/gowin_dpb_oam.v` | Gowin-generated |  |

@@ -2,11 +2,15 @@
 LICENSE	nestang	869140ca36953e6f0395de357a86c90823f84585	COPYING	GPL-3.0 text (identical license in snestang)
 boards/tang-nano-20k/gowin_pll_hdmi.v	nestang	869140ca36953e6f0395de357a86c90823f84585	src/nano20k/gowin_pll_hdmi.v	identical in snestang v0.9; Gowin-generated
 boards/tang-nano-20k/nes/config.v	nestang	869140ca36953e6f0395de357a86c90823f84585	src/nano20k/config.v	
+boards/tang-nano-20k/nes/gowin_pll_nes.ipc	nestang	869140ca36953e6f0395de357a86c90823f84585	src/nano20k/gowin_pll_nes.ipc	Gowin IP generator settings for gowin_pll_nes.v
+boards/tang-nano-20k/nes/gowin_pll_nes.mod	nestang	869140ca36953e6f0395de357a86c90823f84585	src/nano20k/gowin_pll_nes.mod	GowinModGen input for gowin_pll_nes.v (-path is the author's)
 boards/tang-nano-20k/nes/gowin_pll_nes.v	nestang	869140ca36953e6f0395de357a86c90823f84585	src/nano20k/gowin_pll_nes.v	Gowin-generated
 boards/tang-nano-20k/nes/nes.cst	nestang	869140ca36953e6f0395de357a86c90823f84585	src/nano20k/nestang.cst	
 boards/tang-nano-20k/nes/nes.sdc	nestang	869140ca36953e6f0395de357a86c90823f84585	src/nano20k/nestang.sdc	
 boards/tang-nano-20k/nes/top.sv	nestang	869140ca36953e6f0395de357a86c90823f84585	src/nestang_top.sv	
 boards/tang-nano-20k/snes/config.v	snestang	58bb70aba31eb3055aceba910dc1d5c407da853b	src/nano20k/config.v	
+boards/tang-nano-20k/snes/gowin_pll_snes.ipc	snestang	58bb70aba31eb3055aceba910dc1d5c407da853b	src/nano20k/gowin_pll_snes.ipc	Gowin IP generator settings for gowin_pll_snes.v
+boards/tang-nano-20k/snes/gowin_pll_snes.mod	snestang	58bb70aba31eb3055aceba910dc1d5c407da853b	src/nano20k/gowin_pll_snes.mod	GowinModGen input for gowin_pll_snes.v (-path is the author's)
 boards/tang-nano-20k/snes/gowin_pll_snes.v	snestang	58bb70aba31eb3055aceba910dc1d5c407da853b	src/nano20k/gowin_pll_snes.v	Gowin-generated
 boards/tang-nano-20k/snes/snes.cst	snestang	58bb70aba31eb3055aceba910dc1d5c407da853b	src/nano20k/snestang.cst	
 boards/tang-nano-20k/snes/snes.sdc	snestang	58bb70aba31eb3055aceba910dc1d5c407da853b	src/snestang.sdc	
@@ -37,6 +41,8 @@ platform/input/usb_hid_host/usb_hid_host_rom.hex	nestang	869140ca36953e6f0395de3
 platform/input/usb_hid_host/usb_hid_host_rom.v	nestang	869140ca36953e6f0395de357a86c90823f84585	src/usb_hid_host_rom.v	
 platform/io/hw_uart.v	nestang	869140ca36953e6f0395de357a86c90823f84585	src/hw_uart.v	not instantiated; kept for byte-identical import
 platform/io/uart_tx_v2.v	nestang	869140ca36953e6f0395de357a86c90823f84585	src/uart_tx_V2.v	identical in snestang v0.9
+platform/iosys/gowin_dpb_menu.ipc	nestang	869140ca36953e6f0395de357a86c90823f84585	src/iosys/gowin_dpb_menu.ipc	settings for gowin_dpb_menu.v (identical in snestang v0.9)
+platform/iosys/gowin_dpb_menu.mod	nestang	869140ca36953e6f0395de357a86c90823f84585	src/iosys/gowin_dpb_menu.mod	GowinModGen input for gowin_dpb_menu.v (identical in snestang v0.9)
 platform/iosys/nes/gowin_dpb_menu.v	nestang	869140ca36953e6f0395de357a86c90823f84585	src/iosys/gowin_dpb_menu.v	
 platform/iosys/nes/iosys.v	nestang	869140ca36953e6f0395de357a86c90823f84585	src/iosys/iosys.v	
 platform/iosys/nes/textdisp.v	nestang	869140ca36953e6f0395de357a86c90823f84585	src/iosys/textdisp.v	
@@ -101,6 +107,8 @@ systems/snes/chips/s-cpu_5a22/65c816/p65c816.v	snestang	58bb70aba31eb3055aceba91
 systems/snes/chips/s-cpu_5a22/cpu.v	snestang	58bb70aba31eb3055aceba910dc1d5c407da853b	src/cpu.v	
 systems/snes/chips/s-dsp/dsp.v	snestang	58bb70aba31eb3055aceba910dc1d5c407da853b	src/dsp.v	
 systems/snes/chips/s-dsp/dsp.vh	snestang	58bb70aba31eb3055aceba910dc1d5c407da853b	src/dsp.vh	
+systems/snes/chips/s-ppu/gowin_dpb_cgram.ipc	snestang	58bb70aba31eb3055aceba910dc1d5c407da853b	src/gowin_dpb_cgram.ipc	Gowin IP generator settings for gowin_dpb_cgram.v
+systems/snes/chips/s-ppu/gowin_dpb_cgram.mod	snestang	58bb70aba31eb3055aceba910dc1d5c407da853b	src/gowin_dpb_cgram.mod	GowinModGen input for gowin_dpb_cgram.v
 systems/snes/chips/s-ppu/gowin_dpb_cgram.v	snestang	58bb70aba31eb3055aceba910dc1d5c407da853b	src/gowin_dpb_cgram.v	Gowin-generated
 systems/snes/chips/s-ppu/gowin_dpb_hoam.v	snestang	58bb70aba31eb3055aceba910dc1d5c407da853b	src/gowin_dpb_hoam.v	Gowin-generated
 systems/snes/chips/s-ppu/gowin_dpb_oam.v	snestang	58bb70aba31eb3055aceba910dc1d5c407da853b	src/gowin_dpb_oam.v	Gowin-generated

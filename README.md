@@ -76,6 +76,29 @@ make sdcard       # -> build/out/sdcard/cores/
 `build/gowin/gw.sh` runs Gowin headless (Qt `offscreen`) inside an empty network
 namespace (`unshare -rn`), so the vendor tool can't reach the network.
 
+### A minimal Gowin toolchain
+
+The full Gowin download is 1.9 GB of mostly GUI, documentation and other device
+families. `build/gowin/make-kit.sh` copies out only what command-line builds need:
+the build engine, Verilog and VHDL support, the IP generator, device data and
+primitive simulation models for the chosen chips.
+
+```sh
+build/gowin/make-kit.sh --docs --examples /path/to/Gowin_V1.9.11.03_Education_Linux /path/to/gowin-kit
+chmod -R a-w /path/to/gowin-kit                 # Gowin never writes to its install
+export GOWIN_HOME=/path/to/gowin-kit/IDE
+build/gowin/kit-tests/run.sh                    # blinkers for Nano 20K + 9K, IP generation
+make nes snes verify                            # must still match build/expected.sha256
+```
+
+| Option | Adds |
+|---|---|
+| `--devices LIST` | chip families (default `GW1N*,GW2A*`: Tang Nano 1K/4K/9K/20K, Primer 20K; `all` adds the GW5A boards, ~200 MB) |
+| `--docs` | Gowin's English user guides (`IDE/doc/EN`): primitives, block RAM, clocks, DSP, I/O, timing, synthesis |
+| `--examples` | Gowin's example projects (`IDE/data/examples`) |
+Gowin's software can't be redistributed, so the kit stays on your machine; only the
+script is in this repo.
+
 ## Putting it on the board
 
 ```sh

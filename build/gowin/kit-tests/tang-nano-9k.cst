@@ -1,0 +1,7 @@
+// Tang Nano 9K: 27 MHz clock on pin 52, LED0 on pin 10.
+// Used to check that the kit builds for the GW1NR-9C. Check the pins against
+// Sipeed's Tang Nano 9K pinout before loading this onto a board.
+IO_LOC "clk" 52;
+IO_PORT "clk" IO_TYPE=LVCMOS33 PULL_MODE=UP;
+IO_LOC "led" 10;
+IO_PORT "led" PULL_MODE=UP DRIVE=8;
