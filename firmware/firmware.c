@@ -1,3 +1,5 @@
+// Modified for retro-fpga (2026-10-22): name unsupported enhancement chips (SA-1, SPC7110,
+// S-DD1, Cx4) when loading a SNES ROM. See git history.
 // Simple firmware for SNESTang
 // nand2mario, 2024.1
 //
@@ -681,6 +683,31 @@ int parse_snes_header(FIL *fp, int pos, int file_size, int typ, char *hdr,
     return 1;
 }
 
+// Name of the enhancement chip a cartridge header asks for, if that chip is not in any
+// SNESTang core; NULL otherwise. Signatures (map mode $15, chip type $16) are the same
+// ones systems/snes/cartridge/smc_parser.v uses. SuperFX (GSU) is not listed: whether it
+// works depends on how the core was built (CHIP_GSU), which the firmware can't see.
+// Checksum or ASCII title must look valid, so random data doesn't produce a chip name.
+const char *unsupported_chip(const uint8_t *hdr) {
+    uint8_t map = hdr[21], type = hdr[22];
+    int checksum_ok = ((hdr[28] << 8) + hdr[29]) + ((hdr[30] << 8) + hdr[31]) == 0xffff;
+    int title_ok = 1;
+    for (int i = 0; i < 21; i++)
+        if (hdr[i] < 32 || hdr[i] > 127)
+            title_ok = 0;
+    if (!checksum_ok && !title_ok)
+        return NULL;
+    if (map == 0x23 && (type == 0x32 || type == 0x34 || type == 0x35))
+        return "SA-1";
+    if (map == 0x3a && (type == 0xf5 || type == 0xf9))
+        return "SPC7110";
+    if (map == 0x32 && (type == 0x43 || type == 0x45))
+        return "S-DD1";
+    if (map == 0x20 && type == 0xf3)
+        return "Cx4";
+    return NULL;
+}
+
 // actually load a rom file. if bsram backup is needed, also loads the backup.
 // return 0 if successful
 int loadsnes(int rom) {
@@ -718,7 +745,22 @@ int loadsnes(int rom) {
     int off = size & 0x3ff;		// rom header (0 or 512)
     int header_pos;
     DEBUG("off=%d\n", off);
-    
+
+    // cartridges with an enhancement chip the core doesn't have: say so, instead of
+    // "Not a SNES ROM file" (SA-1) or a hang after loading (Cx4)
+    for (int i = 0; i < 2; i++) {
+        unsigned int n;
+        const char *chip;
+        if (f_lseek(&f, (i ? 0xffc0 : 0x7fc0) + off) || f_read(&f, load_buf, 64, &n) || n != 64)
+            continue;
+        if ((chip = unsupported_chip((uint8_t *)load_buf)) != NULL) {
+            status("");
+            printf("%s game: not supported", chip);
+            delay(200);
+            goto loadsnes_close_file;
+        }
+    }
+
     header_pos = 0x7fc0 + off;
     if (parse_snes_header(&f, header_pos, size-off, 0, load_buf, &map_ctrl, &rom_type_header, &rom_size, &ram_size, &company)) {
         header_pos = 0xffc0 + off;
