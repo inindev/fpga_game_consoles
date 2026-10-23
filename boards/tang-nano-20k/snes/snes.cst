@@ -1,4 +1,5 @@
 // Modified for retro-fpga (2026-10-21): IO_TYPE=LVCMOS33 on s0 (Gowin >= 1.9.10 defaults to LVCMOS18). See SOURCES.md.
+// Modified for retro-fpga (2026-10-23): USB gamepad pins and pa_en added. See git history.
 IO_LOC "sys_clk" 4;
 IO_PORT "sys_clk" IO_TYPE=LVCMOS33 PULL_MODE=NONE BANK_VCCIO=3.3;
 IO_LOC "s0" 88;
@@ -57,6 +58,20 @@ IO_PORT "flash_spi_clk" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
 //
 // NO SDRAM ports necessary, they are connected through the "magical" port names of the top module
 //
+
+// USB gamepads (low-speed), top of the right-hand header. Each port: a USB-A socket with
+// VBUS to the 5V pin, GND to GND, and 15K resistors from D+ to GND and from D- to GND.
+IO_LOC "usb1_dp" 42;
+IO_PORT "usb1_dp" IO_TYPE=LVCMOS33 PULL_MODE=DOWN DRIVE=8 BANK_VCCIO=3.3;
+IO_LOC "usb1_dm" 41;
+IO_PORT "usb1_dm" IO_TYPE=LVCMOS33 PULL_MODE=DOWN DRIVE=8 BANK_VCCIO=3.3;
+IO_LOC "usb2_dp" 56;
+IO_PORT "usb2_dp" IO_TYPE=LVCMOS33 PULL_MODE=DOWN DRIVE=8 BANK_VCCIO=3.3;
+IO_LOC "usb2_dm" 54;
+IO_PORT "usb2_dm" IO_TYPE=LVCMOS33 PULL_MODE=DOWN DRIVE=8 BANK_VCCIO=3.3;
+// Onboard audio amp enable (active high), held low: its I2S inputs are on pins 54/56.
+IO_LOC "pa_en" 51;
+IO_PORT "pa_en" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
 
 //------------------------------------------------------------------------------------
 // controllers

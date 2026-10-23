@@ -2,6 +2,8 @@
 #
 #   make nes        NES core      -> build/out/nes_nano20k.{fs,bin}
 #   make snes       SNES core     -> build/out/snes_nano20k.{fs,bin}
+#   make usb_probe  USB port diagnostic core (prints reports on the USB-C serial port)
+#                                 -> build/out/usb_probe_nano20k.{fs,bin}
 #   make firmware   menu firmware -> build/out/firmware.bin
 #   make sdcard     collect cores/ for the SD card -> build/out/sdcard/
 #   make verify     compare build/out/*.bin with the hardware-tested builds
@@ -15,11 +17,11 @@ OUT      := build/out
 GW       := build/gowin/gw.sh
 RISCV    ?= riscv-none-elf
 
-.PHONY: all nes snes firmware sdcard verify clean
+.PHONY: all nes snes usb_probe firmware sdcard verify clean
 
 all: nes snes firmware
 
-nes snes:
+nes snes usb_probe:
 	@mkdir -p $(OUT)/$@
 	cd $(OUT)/$@ && rm -rf impl && GOWIN_HOME="$(GOWIN_HOME)" $(CURDIR)/$(GW) $(CURDIR)/build/gowin/$@_nano20k.tcl > gw_sh.log 2>&1 \
 	  || { grep -E "ERROR" gw_sh.log; echo "build failed: see $(OUT)/$@/gw_sh.log"; exit 1; }

@@ -1,3 +1,7 @@
+// Modified for retro-fpga (2026-10-23): L/R buttons and SNES-layout output game_snes, retry
+// on non-HID devices, buttons cleared on connection error, clock enable (CE_NUM/CE_DEN), one
+// strobe per received byte, setup watchdog. See git history.
+//
 // Usb_hid_host: A compact USB HID host core.
 //
 // nand2mario, 8/2023, based on work by hi631
@@ -6,11 +10,20 @@
 // USB (1.5Mbps). Just connect D+, D-, VBUS (5V) and GND, and two 15K resistors between 
 // D+ and GND, D- and GND. Then provide a 12Mhz clock through usbclk.
 //
+// Without a 12 MHz clock, use a faster usbclk and set CE_NUM/CE_DEN so that
+// usbclk * CE_NUM / CE_DEN = 12 MHz (e.g. 86.4 MHz * 5/36). The core then advances on an
+// internal clock enable that averages exactly 12 MHz; each edge it drives or samples is
+// off by at most one usbclk period. Pulses (report) last one clock-enable period.
+//
 // See https://github.com/nand2mario/usb_hid_host
 // 
 
-module usb_hid_host (
-    input  usbclk,		            // 12MHz clock
+module usb_hid_host #(
+    parameter CE_NUM = 1,           // clock enable rate = CE_NUM / CE_DEN of usbclk
+    parameter CE_DEN = 1,           // 1/1: usbclk is 12 MHz
+    parameter SETUP_TIMEOUT = 18_000_000    // clock-enable ticks (1.5 s), see setup watchdog
+) (
+    input  usbclk,		            // 12MHz clock, or faster with CE_NUM/CE_DEN
     input  usbrst_n,	            // reset
     inout  usb_dm, usb_dp,          // USB D- and D+
 
@@ -29,12 +42,30 @@ module usb_hid_host (
     output reg signed [7:0] mouse_dy,      // signed 8-bit, cleared after `report` pulse
 
     // gamepad 
+    output [11:0] game_snes,        // SNES layout buttons (R L X A RT LT DN UP START SELECT Y B)
     output reg game_l, game_r, game_u, game_d,  // left right up down
     output reg game_a, game_b, game_x, game_y, game_sel, game_sta,  // buttons
+    output reg game_lb, game_rb,    // shoulder buttons
 
     // debug
+    output connected,               // device set up and being polled
+    output reg restart,             // pulse: setup watchdog restarted the device
+
     output [63:0] dbg_hid_report	// last HID report
 );
+
+// Clock enable: CE_NUM ticks every CE_DEN usbclk cycles, as evenly spaced as possible.
+reg [15:0] ce_acc = 0;
+reg ce = 0;
+always @(posedge usbclk) begin
+    if (ce_acc + CE_NUM >= CE_DEN) begin
+        ce_acc <= ce_acc + CE_NUM - CE_DEN;
+        ce <= 1;
+    end else begin
+        ce_acc <= ce_acc + CE_NUM;
+        ce <= 0;
+    end
+end
 
 wire data_rdy;          // data ready
 wire data_strobe;       // data strobe for each byte
@@ -43,13 +74,38 @@ reg [7:0] regs [7];     // 0 (VID_L), 1 (VID_H), 2 (PID_L), 3 (PID_H), 4 (INTERF
 wire save;			    // save dat[b] to output register r
 wire [3:0] save_r;      // which register to save to
 wire [3:0] save_b;      // dat[b]
-wire connected;
+reg retry = 0;          // retry because we did not detect a HID device
+
+assign game_snes = {game_rb, game_lb, game_x, game_a, game_r, game_l, game_d, game_u, game_sta, game_sel, game_y, game_b};
 
 ukp ukp(
-    .usbrst_n(usbrst_n), .usbclk(usbclk),
+    .usbrst_n(usbrst_n & ~retry & ~restart), .usbclk(usbclk), .ce(ce),
     .usb_dp(usb_dp), .usb_dm(usb_dm), .usb_oe(),
     .ukprdy(data_rdy), .ukpstb(data_strobe), .ukpdat(ukpdat), .save(save), .save_r(save_r), .save_b(save_b),
     .connected(connected), .conerr(conerr));
+
+// Setup watchdog. The ukp program repeats each setup step for as long as the device NAKs
+// or does not answer, and every attempt resets ukp's own watchdog, so a device that missed
+// a setup packet leaves the core stuck before `connected`. Restart the ukp if a device is
+// attached but not connected for SETUP_TIMEOUT ticks (normal setup takes ~0.3 s).
+// Attached: not a long SE0. An empty port reads SE0 (both pull-downs); with a low-speed
+// device D- is high between packets, and SE0 lasts only for EOPs and bus resets (10 ms).
+reg        line_dp = 0, line_dm = 0;
+reg [10:0] se0_cnt = 0;                 // ticks of continuous SE0, saturating
+reg [24:0] setup_cnt = 0;
+wire       se0_long = se0_cnt == 11'd1200;              // 100 us
+always @(posedge usbclk) if (ce) begin
+    line_dp <= usb_dp; line_dm <= usb_dm;
+    if (line_dp | line_dm) se0_cnt <= 0;
+    else if (~se0_long)    se0_cnt <= se0_cnt + 11'd1;
+    restart <= 0;
+    if (~usbrst_n || connected || se0_long) setup_cnt <= 0;
+    else if (setup_cnt == SETUP_TIMEOUT) begin
+        setup_cnt <= 0;
+        restart <= 1;
+    end else
+        setup_cnt <= setup_cnt + 25'd1;
+end
 
 reg  [3:0] rcvct;		// counter for recv data
 reg  data_strobe_r, data_rdy_r;	// delayed data_strobe and data_rdy
@@ -66,11 +122,12 @@ assign dbg_hid_report = {dat[7], dat[6], dat[5], dat[4], dat[3], dat[2], dat[1],
 
 reg valid = 0;		    // whether current gamepad report is valid
 
-always @(posedge usbclk) begin : process_in_data
+always @(posedge usbclk) if (ce) begin : process_in_data
     if (~usbrst_n) begin
         valid <= 0;
         report <= 0;
         {game_l, game_r, game_u, game_d, game_a, game_b, game_x, game_y, game_sel, game_sta} <= 0;
+        {game_lb, game_rb} <= 0;
     end else begin
         data_rdy_r <= data_rdy; data_strobe_r <= data_strobe;
         report <= 0;                    // ensure pulse
@@ -103,9 +160,11 @@ always @(posedge usbclk) begin : process_in_data
                     // - d[4] is Y axis
                     // - d[5][7:4] is buttons YBAX
                     // - d[6][5:4] is buttons START,SELECT
+                    // - d[6][1:0] is buttons R,L (shoulders)
                     // Variations:
                     // - Some gamepads uses d[0] and d[1] for X and Y axis.
                     // - Some transmits a different set when d[0][1:0] is 2 (a dualshock adapater)
+                    // The 0810:0001 SNES-style pads use the typical layout, with d[0] = report ID 1.
                     case (rcvct)
                     0: begin
                         if (ukpdat[1:0] != 2'b10) begin
@@ -138,6 +197,8 @@ always @(posedge usbclk) begin : process_in_data
                     6: if (valid) begin
                         game_sel <= ukpdat[4];
                         game_sta <= ukpdat[5];
+                        game_lb <= ukpdat[0];
+                        game_rb <= ukpdat[1];
                     end
                     endcase
                     // TODO: add any special handling if needed 
@@ -148,16 +209,24 @@ always @(posedge usbclk) begin : process_in_data
         end
         if(~data_rdy && data_rdy_r && typ != 0)    // falling edge of ukp data ready
             report <= 1;
+        if (conerr) begin                          // clear everything on connection error
+            game_l <= 0; game_r <= 0; game_u <= 0; game_d <= 0;
+            game_a <= 0; game_b <= 0; game_x <= 0; game_y <= 0;
+            game_sel <= 0; game_sta <= 0;
+            game_lb <= 0; game_rb <= 0;
+        end
     end
 end
 
 reg save_delayed;
 reg connected_r;
-always @(posedge usbclk) begin : response_recognition
+always @(posedge usbclk) if (ce) begin : response_recognition
     if (~usbrst_n) begin
         typ <= 0;
+        retry <= 0;
     end else begin
         save_delayed <= save;
+        retry <= 0;
         if (save) begin
             regs[save_r] <= dat[save_b];
         end else if (save_delayed && ~save && save_r == 6) begin     
@@ -168,10 +237,11 @@ always @(posedge usbclk) begin : response_recognition
                 else
                     typ <= 3;       // gamepad
             end else
-                typ <= 0;                   
+                retry <= 1;         // not a HID device: reset the USB engine and try again                   
         end
         connected_r <= connected;
         if (~connected & connected_r) typ <= 0;   // clear device type on disconnect
+        if (restart) typ <= 0;
     end
 end
 
@@ -179,7 +249,8 @@ endmodule
 
 module ukp(
     input usbrst_n,
-    input usbclk,				// 12MHz clock
+    input usbclk,				// 12MHz clock, or faster with ce
+    input ce,                   // clock enable, averaging 12 MHz (1 if usbclk is 12 MHz)
     inout usb_dp, usb_dm,		// D+, D-
     output usb_oe,
     output reg ukprdy, 			// data frame is outputing
@@ -235,15 +306,17 @@ module ukp(
     wire dbit   = sb[7-sadr[2:0]];
     wire record;
     reg  dmid;
+    reg [6:0] stb_adr = 7'h7f;          // bitadr of the last byte strobe in this packet
     reg [23:0] conct;
-    assign conerr = conct[23]; // || ~usbrst_n;
+    assign conerr = conct[23] || ~usbrst_n;
 
-    usb_hid_host_rom ukprom(.clk(usbclk), .adr(pc), .data(inst));
+    usb_hid_host_rom ukprom(.clk(usbclk), .ce(ce), .adr(pc), .data(inst));
 
-    always @(posedge usbclk) begin
+    always @(posedge usbclk) if (ce) begin
         if(~usbrst_n) begin 
             pc <= 0; connected <= 0; cond <= 0; inst_ready <= 0; state <= S_OPCODE; timing <= 0; 
             mbit <= 0; bitadr <= 0; nak <= 1; ug <= 0;
+            save <= 0;
             dpi <= usb_dp; dmi <= usb_dm;
         end else begin
             dpi <= usb_dp; dmi <= usb_dm;
@@ -331,7 +404,7 @@ module ukp(
             // start instruction
             dmid <= dmi;
             if (inst_ready & state == S_OPCODE & inst == 4'b0010) begin // op=start 
-                bitadr <= 0; nak <= 1; nrzrxct <= 0;
+                bitadr <= 0; nak <= 1; nrzrxct <= 0; stb_adr <= 7'h7f;
             end else 
                 if(ug==0 && dmi!=dmid) timing <= 1;
                 else                   timing <= timing + 1;
@@ -353,6 +426,7 @@ module ukp(
                 if(bitadr==88) ukprdy <= 0;			// output next 8 bytes
             end
             if ((bitadr>11 & bitadr[2:0] == 3'b000) & (timing == 2)) ukpdat <= data;
+            if (ukpstb) stb_adr <= bitadr;     // see ukpstb below
             // Timing
             interval <= interval_cy ? 0 : interval + 1;
             record1 <= record;
@@ -374,7 +448,10 @@ module ukp(
     assign usb_oe = ug;
     assign sample = inst_ready & state == S_OPCODE & inst == 4'b1101 & timing == 4; // IN
     assign record = connected & ~nak;
-    assign ukpstb = ~nrzon & ukprdy & (bitadr[2:0] == 3'b100) & (timing == 2);
+    // One strobe per byte. After the longest run without transitions (7 bit times, e.g.
+    // bytes 7F 7F) a slow device's next edge can arrive after `timing` wraps, so timing == 2
+    // can occur twice for the same bitadr; stb_adr suppresses the second one.
+    assign ukpstb = ~nrzon & ukprdy & (bitadr[2:0] == 3'b100) & (timing == 2) & (bitadr != stb_adr);
     reg    dpi, dmi; 
     reg    ukprdyd;
     reg    nakd;

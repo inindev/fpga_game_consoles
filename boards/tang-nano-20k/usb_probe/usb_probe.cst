@@ -1,0 +1,27 @@
+// USB probe core (Tang Nano 20K). USB pins as in the NES/SNES cores.
+IO_LOC "sys_clk" 4;
+IO_PORT "sys_clk" IO_TYPE=LVCMOS33 PULL_MODE=NONE BANK_VCCIO=3.3;
+
+// UART to the BL616 (USB-C serial port)
+IO_LOC "UART_TXD" 69;
+IO_PORT "UART_TXD" IO_TYPE=LVCMOS33 PULL_MODE=UP DRIVE=8 BANK_VCCIO=3.3;
+
+// LEDs (active low)
+IO_LOC "led[1]" 16;
+IO_PORT "led[1]" IO_TYPE=LVCMOS33 PULL_MODE=UP DRIVE=8 BANK_VCCIO=3.3;
+IO_LOC "led[0]" 15;
+IO_PORT "led[0]" IO_TYPE=LVCMOS33 PULL_MODE=UP DRIVE=8 BANK_VCCIO=3.3;
+
+// USB gamepads: port 1 = 12 MHz PLL, port 2 = 86.4 MHz with clock enable
+IO_LOC "usb1_dp" 42;
+IO_PORT "usb1_dp" IO_TYPE=LVCMOS33 PULL_MODE=DOWN DRIVE=8 BANK_VCCIO=3.3;
+IO_LOC "usb1_dm" 41;
+IO_PORT "usb1_dm" IO_TYPE=LVCMOS33 PULL_MODE=DOWN DRIVE=8 BANK_VCCIO=3.3;
+IO_LOC "usb2_dp" 56;
+IO_PORT "usb2_dp" IO_TYPE=LVCMOS33 PULL_MODE=DOWN DRIVE=8 BANK_VCCIO=3.3;
+IO_LOC "usb2_dm" 54;
+IO_PORT "usb2_dm" IO_TYPE=LVCMOS33 PULL_MODE=DOWN DRIVE=8 BANK_VCCIO=3.3;
+
+// Onboard audio amp enable (active high), held low: its I2S inputs are on pins 54/56.
+IO_LOC "pa_en" 51;
+IO_PORT "pa_en" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;

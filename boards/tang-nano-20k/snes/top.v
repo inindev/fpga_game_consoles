@@ -1,3 +1,5 @@
+// Modified for retro-fpga (2026-10-23): USB gamepads on the pin header (USB1/USB2 in config.v),
+// alongside the DualShock 2 ports. See git history.
 /* 
  * Top level for snestang
  * nand2mario, 2023.6
@@ -70,6 +72,18 @@ module snestang_top (
     input ds_miso2,
     output ds_mosi2,
     output ds_cs2,
+`endif
+
+`ifdef USB1
+    // USB gamepad 1 (low-speed)
+    inout usb1_dp,
+    inout usb1_dm,
+`endif
+`ifdef USB2
+    // USB gamepad 2 (low-speed)
+    inout usb2_dp,
+    inout usb2_dm,
+    output pa_en,           // onboard audio amp enable: held off, its I2S inputs share USB2's pins
 `endif
 
     // SDRAM
@@ -614,6 +628,39 @@ controller_ds2 joy2_ds2 (
    .clk(mclk), .snes_buttons(joy2_btns),
    .ds_clk(ds_clk2), .ds_miso(ds_miso2), .ds_mosi(ds_mosi2), .ds_cs(ds_cs2) 
 );
+`endif
+
+// USB gamepads. There is no spare PLL for a 12 MHz USB clock, so the USB cores run from
+// fclk (86.4 MHz on the Nano 20K) on a clock enable averaging 86.4 * 5/36 = 12.0 MHz.
+// Buttons cross into the mclk domain through two flip-flops each (buttons are independent,
+// so a mix of old and new bits only delays a button by one sample).
+reg [7:0] usb_rst_cnt = 0;              // hold the USB cores in reset for 255 fclk cycles
+wire usb_rstn = &usb_rst_cnt;
+always @(posedge fclk) if (~usb_rstn) usb_rst_cnt <= usb_rst_cnt + 8'd1;
+
+`ifdef USB1
+wire [11:0] usb1_btns;
+reg  [11:0] usb1_btns_s1, usb1_btns_s2;
+usb_hid_host #(.CE_NUM(5), .CE_DEN(36)) usb1 (
+    .usbclk(fclk), .usbrst_n(usb_rstn),
+    .usb_dm(usb1_dm), .usb_dp(usb1_dp),
+    .game_snes(usb1_btns)
+);
+always @(posedge mclk) {usb1_btns_s2, usb1_btns_s1} <= {usb1_btns_s1, usb1_btns};
+assign joy1_btns = usb1_btns_s2;
+`endif
+
+`ifdef USB2
+wire [11:0] usb2_btns;
+reg  [11:0] usb2_btns_s1, usb2_btns_s2;
+usb_hid_host #(.CE_NUM(5), .CE_DEN(36)) usb2 (
+    .usbclk(fclk), .usbrst_n(usb_rstn),
+    .usb_dm(usb2_dm), .usb_dp(usb2_dp),
+    .game_snes(usb2_btns)
+);
+always @(posedge mclk) {usb2_btns_s2, usb2_btns_s1} <= {usb2_btns_s1, usb2_btns};
+assign joy2_btns = usb2_btns_s2;
+assign pa_en = 1'b0;                    // keep the onboard audio amp off
 `endif
 
 // output button presses to SNES

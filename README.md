@@ -112,6 +112,27 @@ writes the chosen core to flash; reboot to start it. Games: `.nes` for the NES c
 Test a build without touching flash: `openFPGALoader -b tangnano20k build/out/nes_nano20k.fs`
 (lost at power-off).
 
+### Controllers
+
+Both cores read DualShock 2 pads, SNES/NES pads and low-speed USB gamepads at the same
+time; all inputs for a player are combined, so use whichever is plugged in. Pins are in
+the `.cst` files.
+
+- **DualShock 2**: Sipeed's joystick adapters on the bottom six pins of each header
+  (player 1 left, player 2 right).
+- **USB gamepads** (low-speed only, no hubs; mapped for 0810:0001 SNES-style pads): two
+  USB-A sockets wired to the top of the right-hand header.
+
+| Header pin | USB |
+|---|---|
+| 5V | VBUS, both sockets |
+| GND | GND, both sockets |
+| 42 / 41 | player 1 D+ / D- |
+| 56 / 54 | player 2 D+ / D- |
+
+Each socket also needs a 15 kΩ resistor from D+ to GND and one from D- to GND. Pins 54/56
+are shared with the onboard audio amplifier, so the cores keep it switched off (pin 51).
+
 ## Status
 
 Verified on hardware (Tang Nano 20K), built with Gowin V1.9.11.03 Education:

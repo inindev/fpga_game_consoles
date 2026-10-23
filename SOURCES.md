@@ -68,9 +68,9 @@ were written for retro-fpga.
 | `platform/input/controller_ds2.sv` | nestang `869140c` | `src/controller_ds2.sv` | identical in snestang v0.9 |  |
 | `platform/input/controller_snes.v` | nestang `869140c` | `src/controller_snes.v` | auto-detects NES vs SNES pads; used by both cores (replaces snestang v0.9 version) |  |
 | `platform/input/dualshock_controller.v` | nestang `869140c` | `src/dualshock_controller.v` | identical in snestang v0.9 |  |
-| `platform/input/usb_hid_host/usb_hid_host.v` | nestang `869140c` | `src/usb_hid_host.v` |  |  |
+| `platform/input/usb_hid_host/usb_hid_host.v` | nestang `869140c` | `src/usb_hid_host.v` | L/R buttons and game_snes output, retry on non-HID devices, buttons cleared on connection error (as in nestang f8dd296/5ab5d15); clock enable; one strobe per received byte; setup watchdog |  |
 | `platform/input/usb_hid_host/usb_hid_host_rom.hex` | nestang `869140c` | `src/usb_hid_host_rom.hex` |  |  |
-| `platform/input/usb_hid_host/usb_hid_host_rom.v` | nestang `869140c` | `src/usb_hid_host_rom.v` |  |  |
+| `platform/input/usb_hid_host/usb_hid_host_rom.v` | nestang `869140c` | `src/usb_hid_host_rom.v` | clock enable |  |
 | `platform/io/uart_tx_v2.v` | nestang `869140c` | `src/uart_tx_V2.v` | identical in snestang v0.9 |  |
 | `platform/iosys/gowin_dpb_menu.ipc` | nestang `869140c` | `src/iosys/gowin_dpb_menu.ipc` | settings for gowin_dpb_menu.v (identical in snestang v0.9) |  |
 | `platform/iosys/gowin_dpb_menu.mod` | nestang `869140c` | `src/iosys/gowin_dpb_menu.mod` | GowinModGen input for gowin_dpb_menu.v (identical in snestang v0.9) |  |

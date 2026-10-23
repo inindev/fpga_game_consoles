@@ -1,9 +1,14 @@
+// Modified for retro-fpga (2026-10-23): USB1/USB2 gamepad ports. See git history.
 `define RES_720P
 `define GW_IDE
 `define NANO
 
 `define CONTROLLER_SNES
 `define CONTROLLER_DS2
+
+// USB gamepads on the pin header (pins and wiring in nes.cst); all controllers are OR'd per player
+`define USB1
+`define USB2
 
 package configPackage;  
 

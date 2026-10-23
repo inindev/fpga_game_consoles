@@ -1,3 +1,5 @@
+// Modified for retro-fpga (2026-10-23): USB gamepads on the pin header (USB1/USB2 in config.v),
+// alongside the DualShock 2 ports. See git history.
 //
 // NESTang top level
 // nand2mario
@@ -71,13 +73,17 @@ module nestang_top (
     output ds_cs2,
 `endif
 
-    // USB
-//     inout usbdm,
-//     inout usbdp,
-// `ifndef PRIMER
-//     inout usbdm2,
-//     inout usbdp2,
-// `endif
+`ifdef USB1
+    // USB gamepad 1 (low-speed)
+    inout usb1_dp,
+    inout usb1_dm,
+`endif
+`ifdef USB2
+    // USB gamepad 2 (low-speed)
+    inout usb2_dp,
+    inout usb2_dm,
+    output pa_en,           // onboard audio amp enable: held off, its I2S inputs share USB2's pins
+`endif
 
     // HDMI TX
     output       tmds_clk_n,
@@ -148,9 +154,6 @@ reg         rv_new_req;
 
 // Controller
 wire [7:0] joy_rx[0:1], joy_rx2[0:1];     // 6 RX bytes for all button/axis state
-wire [7:0] usb_btn, usb_btn2;
-wire usb_btn_x, usb_btn_y, usb_btn_x2, usb_btn_y2;
-wire usb_conerr, usb_conerr2;
 wire auto_a, auto_b, auto_a2, auto_b2;
 
 // OR together when both SNES and DS2 controllers are connected (right now only nano20k supports both simultaneously)
@@ -192,7 +195,6 @@ wire fclk;      // 3x clk SDRAM clock
 wire hclk;      // 720p pixel clock: 74.25 Mhz
 wire hclk5;     // 5x pixel clock: 371.25 Mhz
 wire clk27;     // 27Mhz to generate hclk/hclk5
-wire clk_usb;   // 12Mhz USB clock
 
 reg sys_resetn = 0;
 reg [7:0] reset_cnt = 255;      // reset for 255 cycles before start everything
@@ -521,34 +523,38 @@ end
 assign joypad1_data[0] = joypad_bits[0];
 assign joypad2_data[0] = joypad_bits2[0];
 
-//   usb_btn:      (R L D U START SELECT B A)
-// wire [1:0] usb_type, usb_type2;
-// wire usb_report, usb_report2;
-// usb_hid_host usb_controller (
-//     .usbclk(clk_usb), .usbrst_n(sys_resetn),
-//     .usb_dm(usbdm), .usb_dp(usbdp),	.typ(usb_type), .report(usb_report), 
-//     .game_l(usb_btn[6]), .game_r(usb_btn[7]), .game_u(usb_btn[4]), .game_d(usb_btn[5]), 
-//     .game_a(usb_btn[0]), .game_b(usb_btn[1]), .game_x(usb_btn_x), .game_y(usb_btn_y), 
-//     .game_sel(usb_btn[2]), .game_sta(usb_btn[3]),
-//     // ignore keyboard and mouse input
-//     .key_modifiers(), .key1(), .key2(), .key3(), .key4(),
-//     .mouse_btn(), .mouse_dx(), .mouse_dy(),
-//     .dbg_hid_report()
-// );
+// USB gamepads. There is no spare PLL for a 12 MHz USB clock, so the USB cores run from
+// fclk (64.8 MHz on the Nano 20K) on a clock enable averaging 64.8 * 5/27 = 12.0 MHz.
+// Buttons cross into the clk domain through two flip-flops each (buttons are independent,
+// so a mix of old and new bits only delays a button by one sample).
+reg [7:0] usb_rst_cnt = 0;              // hold the USB cores in reset for 255 fclk cycles
+wire usb_rstn = &usb_rst_cnt;
+always @(posedge fclk) if (~usb_rstn) usb_rst_cnt <= usb_rst_cnt + 8'd1;
 
-// `ifndef PRIMER
-// usb_hid_host usb_controller2 (
-//     .usbclk(clk_usb), .usbrst_n(sys_resetn),
-//     .usb_dm(usbdm2), .usb_dp(usbdp2),	.typ(usb_type2), .report(usb_report2), 
-//     .game_l(usb_btn2[6]), .game_r(usb_btn2[7]), .game_u(usb_btn2[4]), .game_d(usb_btn2[5]), 
-//     .game_a(usb_btn2[0]), .game_b(usb_btn2[1]), .game_x(usb_btn_x2), .game_y(usb_btn_y2), 
-//     .game_sel(usb_btn2[2]), .game_sta(usb_btn2[3]),
-//     // ignore keyboard and mouse input
-//     .key_modifiers(), .key1(), .key2(), .key3(), .key4(),
-//     .mouse_btn(), .mouse_dx(), .mouse_dy(),
-//     .dbg_hid_report()
-// );
-// `endif
+`ifdef USB1
+wire [11:0] usb1_btns;
+reg  [11:0] usb1_btns_s1, usb1_btns_s2;
+usb_hid_host #(.CE_NUM(5), .CE_DEN(27)) usb1 (
+    .usbclk(fclk), .usbrst_n(usb_rstn),
+    .usb_dm(usb1_dm), .usb_dp(usb1_dp),
+    .game_snes(usb1_btns)
+);
+always @(posedge clk) {usb1_btns_s2, usb1_btns_s1} <= {usb1_btns_s1, usb1_btns};
+assign joy1_btns = usb1_btns_s2;
+`endif
+
+`ifdef USB2
+wire [11:0] usb2_btns;
+reg  [11:0] usb2_btns_s1, usb2_btns_s2;
+usb_hid_host #(.CE_NUM(5), .CE_DEN(27)) usb2 (
+    .usbclk(fclk), .usbrst_n(usb_rstn),
+    .usb_dm(usb2_dm), .usb_dp(usb2_dp),
+    .game_snes(usb2_btns)
+);
+always @(posedge clk) {usb2_btns_s2, usb2_btns_s1} <= {usb2_btns_s1, usb2_btns};
+assign joy2_btns = usb2_btns_s2;
+assign pa_en = 1'b0;                    // keep the onboard audio amp off
+`endif
 
 `endif
 
