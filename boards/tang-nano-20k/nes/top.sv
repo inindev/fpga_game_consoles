@@ -1,5 +1,5 @@
 // Modified for retro-fpga (2026-10-23): USB gamepads on the pin header (USB1/USB2 in config.v),
-// alongside the DualShock 2 ports. See git history.
+// alongside the DualShock 2 ports; no menu logo color. See git history.
 //
 // NESTang top level
 // nand2mario
@@ -455,7 +455,7 @@ always @(posedge clk) begin            // RV
     end
 end
 
-iosys #(.COLOR_LOGO(15'b01100_00000_01000), .CORE_ID(1) )     // purple nestang logo
+iosys #(.CORE_ID(1))
     iosys (
     .clk(clk), .hclk(hclk), .resetn(sys_resetn),
 

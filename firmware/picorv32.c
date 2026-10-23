@@ -1,3 +1,5 @@
+// Modified for retro-fpga (2026-10-23): joy_choice() moves the menu cursor before returning
+// a page or confirm result. See git history.
 #include "picorv32.h"
 #include <stdarg.h>
 #include <limits.h>
@@ -222,13 +224,16 @@ int joy_choice(int start_line, int len, int *active, int overlay_key_code) {
    if ((joy1 & 0x20) || (joy2 & 0x20)) {
       if (*active < len-1) (*active)++;
    }
+   int r = 0;
    if ((joy1 & 0x40) || (joy2 & 0x40))
-      return 3;      // previous page
-   if ((joy1 & 0x80) || (joy2 & 0x80))
-      return 2;      // next page
-   if ((joy1 & 0x1) || (joy1 & 0x100) || (joy2 & 0x1) || (joy2 & 0x100))
-      return 1;      // confirm
+      r = 3;         // previous page
+   else if ((joy1 & 0x80) || (joy2 & 0x80))
+      r = 2;         // next page
+   else if ((joy1 & 0x1) || (joy1 & 0x100) || (joy2 & 0x1) || (joy2 & 0x100))
+      r = 1;         // confirm
 
+   // Move the cursor before returning: a diagonal (e.g. up+left) changes *active and
+   // returns 3, and if the caller doesn't redraw, the old '>' would stay on screen.
    cursor(0, start_line + (*active));
    print(">");
    if (last != *active) {
@@ -236,6 +241,7 @@ int joy_choice(int start_line, int len, int *active, int overlay_key_code) {
       print(" ");
       delay(100);     // button debounce
    }
+   if (r) return r;
 
    // DEBUG("joy_choice: return\n");
 

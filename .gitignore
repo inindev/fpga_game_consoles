@@ -6,5 +6,6 @@ firmware/*.o
 firmware/fatfs/*.o
 firmware/*.elf
 firmware/*.bin
+firmware/version.h
 
 .DS_Store

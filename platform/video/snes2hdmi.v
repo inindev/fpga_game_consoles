@@ -1,3 +1,5 @@
+// Modified for retro-fpga (2026-10-23): overlay_x holds at 255 after the last pixel of a line.
+// See git history.
 // NES video and sound to HDMI converter
 // nand2mario, 2022.9
 // This is a special version for tang nano 20k as it uses less BRAM (4 vs the normal 8)
@@ -224,9 +226,12 @@ module snes2hdmi (
             overlay_x <= 0;
             overlay_cnt <= 0;
         end
+        // overlay_x holds at 255 through blanking. textdisp fetches a character when x[0]
+        // changes, so the jump to 0 at cx == 0 must flip x[0]; a wrapped count could be even
+        // there, leaving a pixel fetched during blanking at x = 0.
         if (cx >= 256) begin
             overlay_cnt <= overlay_cnt == 2 ? 0 : overlay_cnt + 1;
-            if (overlay_cnt == 1)
+            if (overlay_cnt == 1 && overlay_x != 8'd255)
                 overlay_x <= overlay_x + 1;
         end
         overlay_y <= y;

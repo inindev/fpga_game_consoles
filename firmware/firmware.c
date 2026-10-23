@@ -1,5 +1,7 @@
 // Modified for retro-fpga (2026-10-22): name unsupported enhancement chips (SA-1, SPC7110,
 // S-DD1, Cx4) when loading a SNES ROM. See git history.
+// Modified for retro-fpga (2026-10-23): the menu shows the git commit and build date, centered
+// on row 26 (FW_VERSION from version.h, written by the makefile). See git history.
 // Simple firmware for SNESTang
 // nand2mario, 2024.1
 //
@@ -10,6 +12,7 @@
 #include "picorv32.h"
 #include "fatfs/ff.h"
 #include "firmware.h"
+#include "version.h"
 
 uint32_t CORE_ID;
 #define CORE_NES 1
@@ -1095,9 +1098,9 @@ int main() {
         print("3) Options\n");
         // cursor(2, 15);
         // print("4) Verify core\n");
-        cursor(2, 16);
-        print("Version: ");
-        print(__DATE__);
+        // Row 26 is drawn in charcoal by the display hardware (textdisp.v VERSION_ROW).
+        cursor((32 - (sizeof(FW_VERSION) - 1)) / 2, 26);
+        print(FW_VERSION);
 
         delay(300);
 

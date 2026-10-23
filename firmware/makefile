@@ -12,11 +12,16 @@ CFLAGS  = -Wall -O2 -g -mabi=ilp32 -march=rv32i -ffreestanding
 LFLAGS = -mabi=ilp32 -march=rv32i -Wl,--build-id=none,-Bstatic,-T,baremetal.ld -nostdlib
 LIBS = -lgcc
 
+# Version shown in the menu: git commit (+ if there are uncommitted changes) and build date.
+# version.h is rewritten only when this text changes, so firmware.c recompiles once per
+# new commit or day rather than on every make.
+VERSION := $(shell git describe --always --dirty=+ 2>/dev/null || echo unknown) $(shell date +%Y-%m-%d)
+
 SRCS := start.S firmware.c picorv32.c spi_sd.c spiflash.c \
 	fatfs/diskio.c fatfs/ff.c fatfs/ffunicode.c
 OBJS := $(SRCS:.c=.o)
 OBJS := $(OBJS:.S=.o)
-HDRS := $(wildcard *.h)
+HDRS := $(filter-out version.h,$(wildcard *.h))
 
 ifeq ($(VERBOSE),1)
   Q =
@@ -53,7 +58,13 @@ ifneq ($(VERBOSE),1)
 endif
 	$(Q)$(OBJCOPY) $(TARGET_ELF) $(TARGET_BIN) -O binary
 
-clean:
-	$(Q)rm -f $(OBJS) $(TARGET_ELF) $(TARGET_BIN)
+version.h: FORCE
+	@echo '#define FW_VERSION "$(VERSION)"' > $@.tmp
+	@cmp -s $@.tmp $@ && rm $@.tmp || mv $@.tmp $@
 
-.PHONY: default all clean
+firmware.o: version.h
+
+clean:
+	$(Q)rm -f $(OBJS) $(TARGET_ELF) $(TARGET_BIN) version.h
+
+.PHONY: default all clean FORCE

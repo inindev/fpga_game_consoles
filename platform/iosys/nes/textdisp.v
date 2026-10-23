@@ -1,3 +1,6 @@
+// Modified for retro-fpga (2026-10-23): no logo; text on row 26 (the version line) is
+// charcoal. See git history.
+//
 // 32x28 text display in 8x8 font, with a picorv32 register I/O interface
 // to print characters to the display.
 
@@ -20,18 +23,18 @@ module textdisp(
 localparam [14:0] COLOR_BACK    = 15'b00000_00000_00000;
 localparam [14:0] COLOR_TEXT    = 15'b10000_11111_11111;    // yellow
 localparam [14:0] COLOR_CURSOR  = 15'b10000_11000_11111;    // orange
-parameter [14:0] COLOR_LOGO    = 15'b00000_10101_00000;    // green
+localparam [14:0] COLOR_VERSION = 15'b01010_01010_01010;    // charcoal
+localparam [4:0]  VERSION_ROW   = 5'd26;
 
 //
-// Pixel output logic for characters and logo:
+// Pixel output logic for characters:
 // 1. To improve timing, output logic is broken into 3 cycles.
-// 2. Char buffer, font rom, logo rom are all stored in the same bram 
-//    block to save LUTs.
+// 2. Char buffer and font rom are stored in the same bram block to save LUTs.
 //
 reg [10:0] mem_addr_b;
 reg [7:0] mem_do_b;
 reg [1:0] mem_cnt;
-reg is_cursor;
+reg is_cursor, is_version;
 reg [2:0] xoff, yoff;
 reg [15:0] overlay_color_buf;
 
@@ -40,10 +43,10 @@ wire [4:0] text_x = reg_char_di[20:16];
 wire [4:0] text_y = reg_char_di[12:8];
 wire [6:0] text_char = reg_char_di[6:0];
 
-// Char buffer, font and logo rom backed by Dual-port BRAM (total 2KB)
+// Char buffer and font rom backed by Dual-port BRAM (total 2KB)
 // this is initialized with font.mi (font.vh + logo.vh)
 // $000-$37F: Character buffer RAM (32*28)
-// $380-$3FF: Logo ROM (14*9 bytes)
+// $380-$3FF: Logo bitmap (14*9 bytes, not drawn)
 // $400-$800: Font ROM
 gowin_dpb_menu menu_mem (
     .clka(clk), .reseta(1'b0), .ocea(), .cea(1'b1), 
@@ -61,37 +64,13 @@ reg [7:0] py;   // = (overlay_y - 24) / 3;
 reg [9:0] overlay_y_r;
 reg [1:0] y_cnt;
 
-// 72x14 pixels 1bpp logo
-localparam LOGO_X = 128-36;
-localparam LOGO_Y = 201;
-
-reg [6:0] logo_addr;
-reg [2:0] logo_xoff;
-reg logo_active;
-
 always @* begin
     case (mem_cnt)
     2'd0: mem_addr_b <= {1'b0, py[7:3], px[7:3]};       // fetch next character
-    2'd1: mem_addr_b <= logo_active ? 
-                        {4'b0111, logo_addr} :          // fetch logo byte
-                        {1'b1, mem_do_b[7] ? 7'h3F : mem_do_b[6:0], yoff};    
+    2'd1: mem_addr_b <= {1'b1, mem_do_b[7] ? 7'h3F : mem_do_b[6:0], yoff};
                                                         // fetch font byte (? for non-ASCII chars)
     default: mem_addr_b <= 0;
     endcase
-end
-
-reg py_logo_active;
-
-always @(posedge hclk) begin
-    if (py == LOGO_Y)
-        py_logo_active <= 1;
-    if (py == LOGO_Y + 14)
-        py_logo_active <= 0;
-
-    if (px >= LOGO_X && px < LOGO_X+71 && py_logo_active)
-        logo_active <= 1;
-    else
-        logo_active <= 0;
 end
 
 always @(posedge hclk) begin
@@ -123,38 +102,27 @@ always @(posedge hclk) begin
     // address generation
     case (mem_cnt)
     2'd0: begin
-        reg [6:0] logo_x;
-        reg [3:0] logo_y;
-
         // output color from last cycle
         overlay_color <= overlay_color_buf;
 
         // for next character
         is_cursor <= px[7:3] == 0;
+        is_version <= py[7:3] == VERSION_ROW;
         xoff <= px[2:0];
         yoff <= py[2:0];
-
-        logo_x = px - LOGO_X;
-        logo_y = py - LOGO_Y;
-        // logo_addr <= logo_y * 9 + logo_x[6:3];
-        logo_addr <= {logo_y, 3'b0} + logo_y + logo_x[6:3];
-        logo_xoff <= logo_x[2:0];
 
         // mem_do_b is character after cycle 0
     end
     2'd1: begin
-        // bram fetches font or logo byte to mem_do_b 
-    end  
+        // bram fetches font byte to mem_do_b
+    end
     2'd2: begin
         // compute output color
         overlay_color_buf <= {1'b0, COLOR_BACK};
-        if (logo_active) begin
-            if (mem_do_b[logo_xoff])
-                overlay_color_buf <= {1'b1, COLOR_LOGO};
-            else
-                overlay_color_buf <= {1'b0, COLOR_BACK};
-        end else if (mem_do_b[xoff]) begin
-            if (is_cursor)
+        if (mem_do_b[xoff]) begin
+            if (is_version)
+                overlay_color_buf <= {1'b1, COLOR_VERSION};
+            else if (is_cursor)
                 overlay_color_buf <= {1'b1, COLOR_CURSOR};
             else
                 overlay_color_buf <= {1'b1, COLOR_TEXT};

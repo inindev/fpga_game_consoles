@@ -1,3 +1,4 @@
+// Modified for retro-fpga (2026-10-23): no COLOR_LOGO (the menu has no logo). See git history.
 // IOSys - PicoRV32-based IO subsystem for snestang
 //
 // IOSys provides the following functionality,
@@ -32,7 +33,6 @@
 
 module iosys #(
     parameter FREQ=21_477_000,
-    parameter [14:0] COLOR_LOGO=15'b00000_10101_00000,
     parameter [15:0] CORE_ID=1      // 1: nestang, 2: snestang
 )
 (
@@ -217,7 +217,7 @@ picorv32 #(
 );
 
 // text display @ 0x0200_0000
-textdisp #(.COLOR_LOGO(COLOR_LOGO)) disp (
+textdisp disp (
     .clk(clk), .hclk(hclk), .resetn(resetn),
     .overlay_x(overlay_x), .overlay_y(overlay_y), .overlay_color(overlay_color),
     .reg_char_we(textdisp_reg_char_sel ? mem_wstrb : 4'b0),
