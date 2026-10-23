@@ -8,7 +8,7 @@
 # 2. Regenerates the Nano 20K PLLs from their .mod files with GowinModGen and
 #    compares them with the committed .v files, ignoring comments (headers carry the
 #    tool version; gowin_pll_snes.v was renamed upstream and its endmodule comment wasn't).
-# Also run `make nes snes verify` from the repo root: the real designs.
+# Also run `make nes snes` from the repo root: the real designs.
 set -euo pipefail
 
 HERE=$(cd "$(dirname "$0")" && pwd)

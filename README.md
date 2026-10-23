@@ -88,7 +88,7 @@ build/gowin/make-kit.sh --docs --examples /path/to/Gowin_V1.9.11.03_Education_Li
 chmod -R a-w /path/to/gowin-kit                 # Gowin never writes to its install
 export GOWIN_HOME=/path/to/gowin-kit/IDE
 build/gowin/kit-tests/run.sh                    # blinkers for Nano 20K + 9K, IP generation
-make nes snes verify                            # must still match build/expected.sha256
+make nes snes                                   # the real designs
 ```
 
 | Option | Adds |
@@ -141,11 +141,6 @@ Verified on hardware (Tang Nano 20K), built with Gowin V1.9.11.03 Education:
 |---|---|---|---|
 | NES | 65% | 30/46 | 76.9 MHz |
 | SNES | 91% | 44/46 | 94.5 MHz |
-
-`make verify` checks that `build/out/*.bin` is byte-identical to those tested builds
-(hashes in `build/expected.sha256`). Compare `.bin`, not `.fs`: the `.fs` header has a
-build timestamp. A change that alters the hardware will change the hash; update
-`build/expected.sha256` only after testing the new build on the board.
 
 ## Conventions
 

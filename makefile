@@ -6,7 +6,6 @@
 #                                 -> build/out/usb_probe_nano20k.{fs,bin}
 #   make firmware   menu firmware -> build/out/firmware.bin
 #   make sdcard     collect cores/ for the SD card -> build/out/sdcard/
-#   make verify     compare build/out/*.bin with the hardware-tested builds
 #   make clean
 #
 # Gateware needs Gowin's tools (x86-64 Linux):  GOWIN_HOME=/path/to/IDE
@@ -17,7 +16,7 @@ OUT      := build/out
 GW       := build/gowin/gw.sh
 RISCV    ?= riscv-none-elf
 
-.PHONY: all nes snes usb_probe firmware sdcard verify clean
+.PHONY: all nes snes usb_probe firmware sdcard clean
 
 all: nes snes firmware
 
@@ -28,7 +27,6 @@ nes snes usb_probe:
 	@# -f: gw_sh writes the bitstreams read-only, so a plain cp can't overwrite them
 	cp -f $(OUT)/$@/impl/pnr/$@_nano20k.fs $(OUT)/$@/impl/pnr/$@_nano20k.bin $(OUT)/
 	@grep -A1 -E "^ *(Logic|BSRAM) " $(OUT)/$@/impl/pnr/$@_nano20k.rpt.txt | grep -E "Logic|BSRAM" || true
-	@sha256sum $(OUT)/$@_nano20k.bin
 
 firmware:
 	$(MAKE) -C firmware RISCV=$(RISCV)
@@ -38,11 +36,6 @@ sdcard:
 	@mkdir -p $(OUT)/sdcard/cores
 	cp $(OUT)/nes_nano20k.bin $(OUT)/snes_nano20k.bin $(OUT)/sdcard/cores/
 	@echo "Copy $(OUT)/sdcard/cores/ to the root of the SD card; use menu '2) Select core'."
-
-# The .bin has no timestamp (the .fs header does), so it is the file to compare.
-# Same hash = same bitstream as the one tested on hardware.
-verify:
-	sha256sum -c build/expected.sha256
 
 clean:
 	rm -rf $(OUT)

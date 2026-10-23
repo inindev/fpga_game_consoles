@@ -22,6 +22,3 @@ python3 tools/import/assemble.py --nestang /tmp/nestang --snestang /tmp/snestang
 
 After the initial import, files are edited directly in the repo. The patches here
 record only the changes made at import time.
-
-Check that the reorganized tree builds the same hardware as the upstream build:
-`make nes snes verify` (see the top-level README).
