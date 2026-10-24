@@ -1,3 +1,5 @@
+// Modified for retro-fpga (2026-10-24): Null packet and packet_type defined as 0 instead of X,
+// so hardware sends the same bytes as simulation. See git history.
 // Implementation of HDMI packet choice logic.
 // By Sameer Puri https://github.com/sameer
 
@@ -36,15 +38,11 @@ assign sub[3] = subs[packet_type][3];
 
 // NULL packet
 // "An HDMI Sink shall ignore bytes HB1 and HB2 of the Null Packet Header and all bytes of the Null Packet Body."
-`ifdef MODEL_TECH
-assign headers[0] = {8'd0, 8'd0, 8'd0}; assign subs[0] = '{56'd0, 56'd0, 56'd0, 56'd0};
-`else
-assign headers[0] = {8'dX, 8'dX, 8'd0};
-assign subs[0][0] = 56'dX;
-assign subs[0][1] = 56'dX;
-assign subs[0][2] = 56'dX;
-assign subs[0][3] = 56'dX;
-`endif
+assign headers[0] = {8'd0, 8'd0, 8'd0};
+assign subs[0][0] = 56'd0;
+assign subs[0][1] = 56'd0;
+assign subs[0][2] = 56'd0;
+assign subs[0][3] = 56'd0;
 
 // Audio Clock Regeneration Packet
 logic clk_audio_counter_wrap;
@@ -162,7 +160,7 @@ begin
         audio_info_frame_sent <= 1'b0;
         auxiliary_video_information_info_frame_sent <= 1'b0;
         source_product_description_info_frame_sent <= 1'b0;
-        packet_type <= 8'dx;
+        packet_type <= 8'd0;  // Null packet
     end
     else if (packet_enable)
     begin

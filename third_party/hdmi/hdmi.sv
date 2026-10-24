@@ -1,3 +1,5 @@
+// Modified for retro-fpga (2026-10-24): hsync/vsync registered once more so they line up with
+// DE; channel 0 bit 3 is 0 on the first data island character. See git history.
 // Implementation of HDMI Spec v1.4a
 // By Sameer Puri https://github.com/sameer
 
@@ -200,6 +202,18 @@ always_comb begin
         vsync <= invert ^ (cy >= screen_height + vsync_pulse_start && cy < screen_height + vsync_pulse_start + vsync_pulse_size);
 end
 
+// hsync/vsync above are combinational from cx/cy, while mode (and so the start of
+// active video) is two registers after cx: video_data_period, then mode. Registering
+// sync once here gives both the same delay to the encoder, so the distance from sync
+// to active video matches CEA-861 (260 pixels for 720p: 40 sync + 220 back porch).
+logic hsync_r = 1'b0;
+logic vsync_r = 1'b0;
+always_ff @(posedge clk_pixel)
+begin
+    hsync_r <= hsync;
+    vsync_r <= vsync;
+end
+
 localparam real VIDEO_RATE = (VIDEO_ID_CODE == 1 ? 25.2E6
     : VIDEO_ID_CODE == 2 || VIDEO_ID_CODE == 3 ? 27.027E6
     : VIDEO_ID_CODE == 4 ? 74.25E6
@@ -331,11 +345,15 @@ generate
             begin
                 mode <= data_island_guard ? 3'd4 : data_island_period ? 3'd3 : video_guard ? 3'd2 : video_data_period ? 3'd1 : 3'd0;
                 video_data <= rgb;
-                control_data <= {{1'b0, data_island_preamble}, {1'b0, video_preamble || data_island_preamble}, {vsync, hsync}}; // ctrl3, ctrl2, ctrl1, ctrl0, vsync, hsync
+                control_data <= {{1'b0, data_island_preamble}, {1'b0, video_preamble || data_island_preamble}, {vsync_r, hsync_r}}; // ctrl3, ctrl2, ctrl1, ctrl0, vsync, hsync
                 data_island_data[11:4] <= packet_data[8:1];
-                data_island_data[3] <= cx != 0;
+                // Bit 3 is 0 on the first character after the leading guard band and 1 on
+                // the rest of the island (HDMI 1.4b CTS). The island starts at
+                // cx = screen_width + 14 (data_island_period_instantaneous); this register
+                // samples cx one clock later, in step with mode.
+                data_island_data[3] <= cx != screen_width + 15;
                 data_island_data[2] <= packet_data[0];
-                data_island_data[1:0] <= {vsync, hsync};
+                data_island_data[1:0] <= {vsync_r, hsync_r};
             end
         end
     end
@@ -353,7 +371,7 @@ generate
             begin
                 mode <= video_data_period ? 3'd1 : 3'd0;
                 video_data <= rgb;
-                control_data <= {4'b0000, {vsync, hsync}}; // ctrl3, ctrl2, ctrl1, ctrl0, vsync, hsync
+                control_data <= {4'b0000, {vsync_r, hsync_r}}; // ctrl3, ctrl2, ctrl1, ctrl0, vsync, hsync
             end
         end
     end
