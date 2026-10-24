@@ -169,6 +169,12 @@ Both cores output 1280x720 at 60 Hz through the same scaler (`platform/video/vid
   per frame for about 120 µs, so every frame is shown exactly once and nothing tears.
 - The menu has its own fixed 3x window and shows over the game dimmed to 1/4.
 
+`make nes TEST_PATTERN=1` (or `snes`) builds a core that shows grey steps instead of the
+game (`build/out/nes_nano20k_testpattern.bin`), for checking how a TV handles the HDMI
+colour range: an upper row of 16 near-black patches (0, 4 … 60) and a lower row of 16
+near-white patches (195, 199 … 255). If the TV shows every patch distinct, it receives
+every level; patches that merge into one black or one white are being clipped.
+
 ## Status
 
 Verified on hardware (Tang Nano 20K), built with Gowin V1.9.11.03 Education:

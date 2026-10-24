@@ -4,8 +4,8 @@
 
 set root [file normalize [file join [file dirname [info script]] .. ..]]
 
-# Set by the makefile (CONTROLLERS): output name, and the pin file it generated in the build
-# folder, next to controllers.vh (which config.v includes; that folder is the include path).
+# Set by the makefile (CONTROLLERS, TEST_PATTERN): output name, and the pin file it generated in the build
+# folder, next to build.vh (which config.v includes; that folder is the include path).
 foreach v {RF_NAME RF_CST} {
     if {![info exists ::env($v)]} { error "$v not set: build with make (see makefile)" }
 }
@@ -91,7 +91,12 @@ set_option -top_module snestang_top
 set_option -verilog_std sysv2017
 set_option -include_path [file dirname $::env(RF_CST)]
 set_option -rw_check_on_ram 1
-set_option -place_option 2
+# Placement and routing algorithms chosen for timing. The core fills ~98% of the logic and
+# the HDMI encoder path (hclk, 74.25 MHz) has little margin; of the combinations Gowin
+# 1.9.11.03 accepts (place 0-2, route 0-2), place 0 with route 2 gives the most: hclk 75.7
+# MHz. Small design changes move placement, so check hclk in the timing report after each.
+set_option -place_option 0
+set_option -route_option 2
 set_option -use_mspi_as_gpio 1
 set_option -use_sspi_as_gpio 1
 set_option -use_ready_as_gpio 1

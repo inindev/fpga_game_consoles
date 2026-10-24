@@ -1,13 +1,15 @@
 // Modified for retro-fpga (2026-10-23): USB1/USB2 gamepad ports. See git history.
-// Modified for retro-fpga (2026-10-24): controller defines come from make (CONTROLLERS). See git history.
+// Modified for retro-fpga (2026-10-24): controller and test-pattern defines come from make
+// (CONTROLLERS, TEST_PATTERN). See git history.
 `define RES_720P
 `define GW_IDE
 `define NANO
 
-// Controllers: CONTROLLER_SNES, CONTROLLER_DS2, USB1, USB2. make writes them to
-// controllers.vh in the build folder from CONTROLLERS (default: all); see makefile.
-// All controllers built in are OR'd per player.
-`include "controllers.vh"
+// Build options, written by make to build.vh in the build folder (see makefile):
+// - controllers: CONTROLLER_SNES, CONTROLLER_DS2, USB1, USB2, from CONTROLLERS (default:
+//   all). All controllers built in are OR'd per player.
+// - VIDEO_TEST_PATTERN, from TEST_PATTERN=1 (see platform/video/video_out.v).
+`include "build.vh"
 
 package configPackage;  
 

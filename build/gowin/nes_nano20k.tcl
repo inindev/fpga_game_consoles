@@ -4,8 +4,8 @@
 
 set root [file normalize [file join [file dirname [info script]] .. ..]]
 
-# Set by the makefile (CONTROLLERS): output name, and the pin file it generated in the build
-# folder, next to controllers.vh (which config.v includes; that folder is the include path).
+# Set by the makefile (CONTROLLERS, TEST_PATTERN): output name, and the pin file it generated in the build
+# folder, next to build.vh (which config.v includes; that folder is the include path).
 foreach v {RF_NAME RF_CST} {
     if {![info exists ::env($v)]} { error "$v not set: build with make (see makefile)" }
 }

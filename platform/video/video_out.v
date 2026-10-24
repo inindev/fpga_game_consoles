@@ -281,11 +281,33 @@ end
 wire        osd_on5 = osd_on_d[3];
 wire [23:0] osd_color5 = osd_color_d[3];
 
+// Test pattern (make TEST_PATTERN=1): replaces the game with two rows of 16 grey patches,
+// 64x180 pixels each, for checking how a TV handles the HDMI colour range:
+//   upper row (lines 160-339): 0, 4, 8 ... 60       (near black)
+//   lower row (lines 380-559): 195, 199, 203 ... 255 (near white)
+// A TV that shows every patch distinct receives the full range of codes the cores send.
+// A TV that treats the signal as limited range (16-235) merges the patches at 0-16 into
+// one black and those at 235-255 into one white. Positions follow cx/cy within a pixel or
+// two, which doesn't matter for patches this size.
+`ifdef VIDEO_TEST_PATTERN
+wire [10:0] tp_dx  = cx - 11'd128;
+wire        tp_col = cx >= 11'd128 && cx < 11'd1152;    // 16 patches x 64 pixels
+wire [3:0]  tp_idx = tp_dx[9:6];
+wire [7:0]  tp_lvl = cy >= 10'd160 && cy < 10'd340 ? {2'b00, tp_idx, 2'b00}
+                   : cy >= 10'd380 && cy < 10'd560 ? 8'd195 + {2'b00, tp_idx, 2'b00}
+                   : 8'd0;
+wire [23:0] tp_rgb = tp_col ? {3{tp_lvl}} : 24'h000000;
+`endif
+
 // Stage 6: what the HDMI encoder sends. Black around the picture.
 reg [23:0] rgb;
 always @(posedge hclk) begin
     reg [23:0] game;
+`ifdef VIDEO_TEST_PATTERN
+    game = tp_rgb;
+`else
     game = on5 && cfg_active ? g5 : 24'h000000;
+`endif
     if (cfg_overlay)
         rgb <= osd_on5 ? osd_color5 : {2'b0, game[23:18], 2'b0, game[15:10], 2'b0, game[7:2]};
     else
