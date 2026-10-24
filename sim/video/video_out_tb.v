@@ -7,7 +7,8 @@
 // weighted by how much of it each covers (computed here in real arithmetic, independently
 // of the hardware's integer stepping). Checked for 8:7, square and 4:3 at 224, 239 and
 // 240 lines. Then the menu: characters written through the register interface must show
-// at 3x in the 768x672 window at (256, 24), over the game dimmed to 1/4.
+// at 3x in the 768x672 window at (256, 24), over the game dimmed to 1/4, the cursor '>' in
+// orange, and the banner row slanted, red on its white box.
 
 `timescale 1ns / 1ps
 
@@ -56,6 +57,10 @@ endfunction
 // Menu contents as written by the test (0 = blank)
 reg [6:0] chars [0:31][0:27];
 
+// Banner as set by the test
+reg     ban_on = 0;
+integer ban_row = 0, ban_x0 = 0, ban_x1 = 0;
+
 function [7:0] font_byte(input [6:0] c, input [2:0] row);
     reg [10:0] a;
     begin
@@ -71,6 +76,7 @@ function [23:0] expected(input integer x, input integer y);
     real left, right, wb, e;
     reg [23:0] a, b, g;
     reg [7:0] fb;
+    reg big, box, text;
     begin
         tol = 0;
         v = src_lines > 240 ? 240 : src_lines;
@@ -105,13 +111,27 @@ function [23:0] expected(input integer x, input integer y);
         expected = g;
         if (overlay) begin
             expected = {2'b0, g[23:18], 2'b0, g[15:10], 2'b0, g[7:2]};
-            if (x >= 256 && x < 1024 && y >= 24 && y < 696) begin
-                mx = (x - 256) / 3;
+            if (y >= 24 && y < 696) begin
                 my = (y - 24) / 3;
-                fb = font_byte(chars[mx / 8][my / 8], my % 8);
-                if (fb[mx % 8]) begin
-                    expected = my / 8 == 26 ? 24'h505050 :
-                               mx / 8 == 0  ? 24'hF8C080 : 24'hF8F880;
+                // The banner row is shifted right by 7 - (line in the row) columns
+                big = ban_on && my / 8 == ban_row;
+                mx = x - 256 - (big ? 7 - my % 8 : 0);
+                text = 0;
+                if (mx >= 0 && mx < 768) begin
+                    mx = mx / 3;
+                    fb = font_byte(chars[mx / 8][my / 8], my % 8);
+                    text = fb[mx % 8];
+                end
+                box = ban_on && my + 2 >= 8 * ban_row && my + 2 < 8 * ban_row + 12 &&
+                      x >= 256 + 24 * ban_x0 - 12 && x < 256 + 24 * (ban_x1 + 1) + 19;
+                if (big || box) begin
+                    if (text || box) begin
+                        expected = text ? 24'hE60012 : 24'hFFFFFF;
+                        tol = 0;
+                    end
+                end else if (text) begin
+                    expected = my / 8 == 26                 ? 24'h505050 :
+                               chars[mx / 8][my / 8] == ">" ? 24'hF8C080 : 24'hF8F880;
                     tol = 0;
                 end
             end
@@ -184,11 +204,26 @@ task osd_write(input [4:0] x, input [4:0] y, input [6:0] c);
     end
 endtask
 
+task osd_banner(input on, input [4:0] y, input [4:0] x0, input [4:0] x1);
+    begin
+        @(posedge clk);
+        osd_we <= 1;
+        osd_wdata <= {6'b0, 2'd3, 3'b0, x0, 3'b0, y, on, 2'b0, x1};
+        @(posedge clk);
+        osd_we <= 0;
+        ban_on = on;
+        ban_row = y;
+        ban_x0 = x0;
+        ban_x1 = x1;
+    end
+endtask
+
 // frame_go: one pulse per HDMI frame
 integer go_count = 0;
 always @(posedge clk) if (frame_go) go_count = go_count + 1;
 
 integer k, gx, gy, go_before;
+reg [111:0] title;
 initial begin
     for (gx = 0; gx < 32; gx = gx + 1)
         for (gy = 0; gy < 28; gy = gy + 1)
@@ -226,7 +261,7 @@ initial begin
     set_mode(0, 224); check_frame("no game: black");
     @(posedge clk) src_active <= 1;
 
-    // Menu: column 0 (cursor color), the last cell, the version row, and a full row
+    // Menu: column 0, the last cell, the version row, and a full row (with '>' in column 29)
     osd_write(0, 0, "A");
     osd_write(31, 27, "Z");
     osd_write(10, 26, "v");
@@ -235,6 +270,22 @@ initial begin
     @(posedge clk) overlay <= 1;
     set_mode(0, 224); check_frame("menu over 8:7 game");
     set_mode(1, 240); check_frame("menu over square 240-line game");
+
+    // Banner as on the main menu: row 7, box over cells 9..22. Characters in rows 6 and 8
+    // where the box margin covers them show red; outside the box, normal.
+    title = "Super Nintendo";
+    for (k = 0; k < 14; k = k + 1)
+        osd_write(9 + k, 7, title[(13 - k) * 8 +: 8]);
+    osd_write(10, 6, "W");
+    osd_write(20, 8, "M");
+    osd_write(3, 8, "#");
+    osd_banner(1, 7, 9, 22);
+    set_mode(0, 224); check_frame("banner, row 7");
+    // Full width on row 0: box beyond both window edges, row 13 text still normal
+    osd_banner(1, 0, 0, 31);
+    check_frame("banner, row 0, full width");
+    osd_banner(0, 0, 0, 0);
+    check_frame("banner off");
 
     if (errors == 0)
         $display("PASS: %0d pixels checked", checked);

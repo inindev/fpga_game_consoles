@@ -140,11 +140,18 @@ int printf(const char *fmt,...)
 }
 
 void clear() {
+   banner(0, 0, 0, 0);
    for (int i = 0; i < 28; i++) {
       cursor(0, i);
       for (int j = 0; j < 32; j++)
          putchar(' ');
    }
+}
+
+// Show row y as the banner (see platform/video/osd.v): italic, red on a white box over
+// columns x0..x1
+void banner(int on, int y, int x0, int x1) {
+   reg_textdisp = 0x03000000 + ((x0 & 31) << 16) + ((y & 31) << 8) + (on ? 0x80 : 0) + (x1 & 31);
 }
 
 void uart_init(int clkdiv) {
@@ -196,7 +203,7 @@ void backup_process();
 
 // (R L X A RT LT DN UP START SELECT Y B)
 // overlay_key_code: 0x84 for SELECT&RIGHT, 0xC for SELECT&START, 0x804 for SELECT/RB
-int joy_choice(int start_line, int len, int *active, int overlay_key_code) {
+int joy_choice(int col, int start_line, int len, int *active, int overlay_key_code) {
    if (*active < 0 || *active >= len)
       *active = 0;
    int joy1, joy2;
@@ -234,10 +241,10 @@ int joy_choice(int start_line, int len, int *active, int overlay_key_code) {
 
    // Move the cursor before returning: a diagonal (e.g. up+left) changes *active and
    // returns 3, and if the caller doesn't redraw, the old '>' would stay on screen.
-   cursor(0, start_line + (*active));
+   cursor(col, start_line + (*active));
    print(">");
    if (last != *active) {
-      cursor(0, start_line + last);
+      cursor(col, start_line + last);
       print(" ");
       delay(100);     // button debounce
    }

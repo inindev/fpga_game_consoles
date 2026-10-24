@@ -6,11 +6,16 @@
 // A character cell is 8 pixels = 24 output columns. During each cell the next cell's
 // character and font byte are fetched (one memory port, 2 reads per 24 columns), and the
 // font byte is switched in at the cell boundary.
+//
+// Banner (command 3): text row y is drawn slanted to the right (italic), in red on a white
+// box. The box spans cells x0..x1 plus a margin and is not slanted.
 
 module osd (
     // Core clock domain: register writes from iosys (0x0200_0000)
-    //   [25:24] command: 0 = write a character, 1/2 = menu on/off (handled in iosys)
-    //   [20:16] x, [12:8] y, [6:0] character
+    //   [25:24] command: 0 = write a character, 1/2 = menu on/off (handled in iosys),
+    //                    3 = banner
+    //   command 0: [20:16] x, [12:8] y, [6:0] character
+    //   command 3: [20:16] x0, [12:8] y, [7] on, [4:0] x1
     input             clk,
     input             osd_we,
     input      [31:0] osd_wdata,
@@ -28,14 +33,37 @@ localparam [10:0] X0 = 11'd256;         // window left edge
 localparam [9:0]  Y0 = 10'd24;          // window top edge
 
 localparam [23:0] COLOR_TEXT    = 24'hF8F880;   // yellow
-localparam [23:0] COLOR_CURSOR  = 24'hF8C080;   // orange: column 0, where the menu cursor is
+localparam [23:0] COLOR_CURSOR  = 24'hF8C080;   // orange: the menu cursor '>'
 localparam [23:0] COLOR_VERSION = 24'h505050;   // charcoal: row 26, the version line
 localparam [4:0]  VERSION_ROW   = 5'd26;
+localparam [23:0] COLOR_BANNER  = 24'hE60012;   // red: banner text
+localparam [23:0] COLOR_BOX     = 24'hFFFFFF;   // white: behind the banner
 
 wire [1:0] cmd       = osd_wdata[25:24];
 wire [4:0] text_x    = osd_wdata[20:16];
 wire [4:0] text_y    = osd_wdata[12:8];
 wire [6:0] text_char = osd_wdata[6:0];
+
+// Banner settings {on, row, x0, x1}, written in the core clock domain and taken into the
+// HDMI domain through two registers. They change only while the menu is redrawn.
+reg  [15:0] ban_c = 0;
+always @(posedge clk)
+    if (osd_we && cmd == 2'd3)
+        ban_c <= {osd_wdata[7], text_y, text_x, osd_wdata[4:0]};
+
+reg  [15:0] ban_s1 = 0, ban_s2 = 0;
+always @(posedge hclk) {ban_s2, ban_s1} <= {ban_s1, ban_c};
+wire       ban_on  = ban_s2[15];
+wire [4:0] ban_row = ban_s2[14:10];
+wire [4:0] ban_x0  = ban_s2[9:5];
+wire [4:0] ban_x1  = ban_s2[4:0];
+
+// Box edges in output columns: 12 columns of margin, plus 7 on the right for the slant
+reg [10:0] box_x0, box_x1;
+always @(posedge hclk) begin
+    box_x0 <= X0 + {ban_x0, 4'd0} + {ban_x0, 3'd0} - 11'd12;
+    box_x1 <= X0 + {ban_x1, 4'd0} + {ban_x1, 3'd0} + 11'd24 + 11'd19;
+end
 
 // Character buffer and font in one 2 KB block RAM:
 // $000-$37F: characters (32*28), $380-$3FF: unused, $400-$7FF: font (8 bytes per character,
@@ -74,13 +102,26 @@ always @(posedge hclk) begin
     end
 end
 
+// Banner row, and the box: the row plus 2 lines of margin above and below. Registered:
+// my changes only in horizontal blanking. Each banner line starts one column further
+// right than the line below it.
+wire [8:0] ban_y = {1'b0, ban_row, 3'd0};
+reg        ban_line = 0, box_v = 0;
+reg [2:0]  shift = 0;
+always @(posedge hclk) begin
+    ban_line <= ban_on && v_on && my[7:3] == ban_row;
+    box_v    <= ban_on && v_on && my + 9'd2 >= ban_y && my + 9'd2 < ban_y + 9'd12;
+    shift    <= ~my[2:0];
+end
+
 // Horizontal: menu column mx counts from -8 so that cell 0 is fetched during cell -1.
 // mx[8] = 1 means left of the window (cell -1); 256 is the right edge.
 reg [8:0] mx = 0;
 reg [1:0] mx_ph = 0;
 reg       h_run = 0;
 always @(posedge hclk) begin
-    if (hpos == X0 - 11'd25) begin      // one cell (24 columns) before the window
+    // one cell (24 columns) before the window
+    if (hpos == X0 - 11'd25 + (ban_line ? shift : 3'd0)) begin
         h_run <= 1'b1;
         mx <= 9'h1F8;
         mx_ph <= 0;
@@ -98,6 +139,7 @@ end
 wire       slot0 = h_run && mx[2:0] == 3'd0 && mx_ph == 2'd0;
 reg        slot1, slot2;
 reg [7:0]  next_font, cur_font;
+reg [6:0]  next_char, cur_char;
 wire [4:0] next_cell = mx[7:3] + 5'd1;
 
 always @* begin
@@ -110,16 +152,23 @@ end
 always @(posedge hclk) begin
     slot1 <= slot0;
     slot2 <= slot1;
+    if (slot1) next_char <= mem_do_b[6:0];
     if (slot2) next_font <= mem_do_b;
-    if (h_run && mx[2:0] == 3'd7 && mx_ph == 2'd2)
+    if (h_run && mx[2:0] == 3'd7 && mx_ph == 2'd2) begin
         cur_font <= next_font;
+        cur_char <= next_char;
+    end
 end
 
 // Output pixel
 always @(posedge hclk) begin
-    px_on <= v_on && h_run && ~mx[8] && cur_font[mx[2:0]];
-    px_color <= my[7:3] == VERSION_ROW ? COLOR_VERSION :
-                mx[7:3] == 5'd0        ? COLOR_CURSOR  : COLOR_TEXT;
+    reg text, box;
+    text = v_on && h_run && ~mx[8] && cur_font[mx[2:0]];
+    box  = box_v && hpos >= box_x0 && hpos < box_x1;
+    px_on <= text || box;
+    px_color <= ban_line || box        ? (text ? COLOR_BANNER : COLOR_BOX) :
+                my[7:3] == VERSION_ROW ? COLOR_VERSION :
+                cur_char == 7'h3E      ? COLOR_CURSOR  : COLOR_TEXT;
 end
 
 endmodule

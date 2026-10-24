@@ -37,6 +37,7 @@ extern void print_dec(int v);
 extern int  print(const char *s);
 extern void clear();
 extern void overlay(int on);
+extern void banner(int on, int y, int x0, int x1);
 extern char *trimwhitespace(char *str);
 extern void delay(int ms);
 
@@ -55,7 +56,7 @@ extern void joy_get(int *joy1, int *joy2);
 // display cursor and let user choose using joystick. 
 // this returns immediately
 // 0: no choice from user, 1: user chose *active, 2: next page, 3: previous page
-extern int joy_choice(int start_line, int len, int *active, int osd_key_code);
+extern int joy_choice(int col, int start_line, int len, int *active, int osd_key_code);
 
 // SD card access
 extern int sd_init();   /* Return 0 on success, non-zero on failure */

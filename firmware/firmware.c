@@ -309,7 +309,7 @@ int menu_loadrom(int *choice) {
             }
             delay(300);
             while (1) {
-                int r = joy_choice(TOPLINE, file_len, &active, OSD_KEY_CODE);
+                int r = joy_choice(0, TOPLINE, file_len, &active, OSD_KEY_CODE);
                 if (r == 1) {
                     if (strcmp(pwd, "/") == 0 && page == 0 && active == 0) {
                         // return to main menu
@@ -556,7 +556,7 @@ void menu_select_core(int verify) {
             draw = 0;
         }
         // DEBUG("Calling joy_chocie\n");
-        if (joy_choice(2, total, &choice, OSD_KEY_CODE) == 1) {
+        if (joy_choice(0, 2, total, &choice, OSD_KEY_CODE) == 1) {
             if (choice == 0)
                 return;
             else {
@@ -629,7 +629,7 @@ void menu_options() {
         delay(300);
 
         for (;;) {
-            if (joy_choice(12, 5, &choice, OSD_KEY_CODE) == 1) {
+            if (joy_choice(0, 12, 5, &choice, OSD_KEY_CODE) == 1) {
                 if (choice == 0) {
                     return;
                 } else if (choice == 1) {
@@ -1109,18 +1109,21 @@ int main() {
     for (;;) {
         // main menu
         clear();
-        cursor(2, 10);
-        //     01234567890123456789012345678901
-        if (CORE_ID == 1)
-            print("=== Welcome to NESTang ===");
-        else
-            print("~~~ Welcome to SNESTang ~~~");
+        // Banner on row 7, centred
+        {
+            const char *title = CORE_ID == 1 ? "Nintendo" : "Super Nintendo";
+            int len = strlen(title);
+            cursor((32 - len) / 2, 7);
+            print(title);
+            banner(1, 7, (32 - len) / 2, (32 - len) / 2 + len - 1);
+        }
 
-        cursor(2, 12);
+        // Centred: cursor in column 3, items from column 5 (the longest is 24 wide)
+        cursor(5, 12);
         print("1) Load ROM from SD card\n");
-        cursor(2, 13);
+        cursor(5, 13);
         print("2) Select core\n");
-        cursor(2, 14);
+        cursor(5, 14);
         print("3) Options\n");
         // cursor(2, 15);
         // print("4) Verify core\n");
@@ -1132,7 +1135,7 @@ int main() {
 
         int choice = 0;
         for (;;) {
-            int r = joy_choice(12, 3, &choice, OSD_KEY_CODE);
+            int r = joy_choice(3, 12, 3, &choice, OSD_KEY_CODE);
             if (r == 1) break;
         }
 
