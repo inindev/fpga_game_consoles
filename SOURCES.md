@@ -74,14 +74,10 @@ were written for retro-fpga.
 | `platform/io/uart_tx_v2.v` | nestang `869140c` | `src/uart_tx_V2.v` | identical in snestang v0.9 |  |
 | `platform/iosys/gowin_dpb_menu.ipc` | nestang `869140c` | `src/iosys/gowin_dpb_menu.ipc` | settings for gowin_dpb_menu.v (identical in snestang v0.9) |  |
 | `platform/iosys/gowin_dpb_menu.mod` | nestang `869140c` | `src/iosys/gowin_dpb_menu.mod` | GowinModGen input for gowin_dpb_menu.v (identical in snestang v0.9) |  |
-| `platform/iosys/nes/gowin_dpb_menu.v` | nestang `869140c` | `src/iosys/gowin_dpb_menu.v` |  |  |
-| `platform/iosys/nes/iosys.v` | nestang `869140c` | `src/iosys/iosys.v` |  |  |
-| `platform/iosys/nes/textdisp.v` | nestang `869140c` | `src/iosys/textdisp.v` |  |  |
+| `platform/iosys/gowin_dpb_menu.v` | snestang `58bb70a` | `src/iosys/gowin_dpb_menu.v` | shared by both cores; nestang's differs only in the logo bitmap, which is not drawn |  |
+| `platform/iosys/iosys.v` | snestang `58bb70a` | `src/iosys/iosys.v` | shared by both cores (nestang's ROM byte pacing is the ROM_SLOW parameter) |  |
 | `platform/iosys/simplespimaster.v` | nestang `869140c` | `src/iosys/simplespimaster.v` | identical in snestang v0.9 |  |
 | `platform/iosys/simpleuart.v` | nestang `869140c` | `src/iosys/simpleuart.v` | identical in snestang v0.9 |  |
-| `platform/iosys/snes/gowin_dpb_menu.v` | snestang `58bb70a` | `src/iosys/gowin_dpb_menu.v` |  |  |
-| `platform/iosys/snes/iosys.v` | snestang `58bb70a` | `src/iosys/iosys.v` |  |  |
-| `platform/iosys/snes/textdisp.v` | snestang `58bb70a` | `src/iosys/textdisp.v` |  |  |
 | `platform/iosys/spi_master.v` | nestang `869140c` | `src/iosys/spi_master.v` | identical in snestang v0.9 |  |
 | `platform/iosys/spiflash.v` | nestang `869140c` | `src/iosys/spiflash.v` | identical in snestang v0.9 |  |
 | `platform/memory/dpram.v` | nestang `869140c` | `src/dpram.v` | used by the Namco mapper |  |
@@ -90,8 +86,6 @@ were written for retro-fpga.
 | `platform/memory/sdram_snes.v` | snestang `58bb70a` | `src/nano20k/sdram_nano.v` | SNES SDRAM controller for the Nano 20K |  |
 | `platform/video/assets/font.vh` | nestang `869140c` | `src/assets/font.vh` | identical to snestang src/font.vh |  |
 | `platform/video/assets/logo.py` | nestang `869140c` | `src/assets/logo.py` | generates the menu logo bitmap |  |
-| `platform/video/nes2hdmi.sv` | nestang `869140c` | `src/nes2hdmi.sv` |  | `04-nes2hdmi-drop-background.patch` |
-| `platform/video/snes2hdmi.v` | snestang `58bb70a` | `src/snes2hdmi_nano.v` | Nano 20K variant of snes2hdmi |  |
 
 ## systems/
 
@@ -187,5 +181,4 @@ were written for retro-fpga.
 
 - `boards/tang-nano-20k/nes/nes.cst`: `02-nes-s1-io-type.patch`: Button s1: add IO_TYPE=LVCMOS33. Gowin >= 1.9.10 defaults to LVCMOS18, which conflicts with the 3.3 V bank (CT1108/CT1136).
 - `boards/tang-nano-20k/snes/snes.cst`: `03-snes-s0-io-type.patch`: Button s0: add IO_TYPE=LVCMOS33. Gowin >= 1.9.10 defaults to LVCMOS18, which conflicts with the 3.3 V bank (CT1108/CT1136).
-- `platform/video/nes2hdmi.sv`: `04-nes2hdmi-drop-background.patch`: nes2hdmi: drop the $readmemb("background.txt") initializer. The file was never found by the build, and the power-up loop clears the frame buffer to grey anyway, so it had no effect; removing it avoids a misleading data file and build warning.
 - `systems/nes/cartridge/mappers/mmc5.sv`: `01-nes-mmc5-exram-bsram.patch`: MMC5 expansion RAM: one write port + one read port in a dedicated block, so Gowin >= 1.9.10 infers block RAM instead of ~16k cells of flip-flops (behaviour unchanged).

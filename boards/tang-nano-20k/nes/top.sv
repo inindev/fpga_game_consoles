@@ -1,5 +1,7 @@
 // Modified for retro-fpga (2026-10-23): USB gamepads on the pin header (USB1/USB2 in config.v),
 // alongside the DualShock 2 ports; no menu logo color. See git history.
+// Modified for retro-fpga (2026-10-24): video through nes_video.sv (line buffer, frame lock,
+// shared scaler and menu); shared iosys. See git history.
 //
 // NESTang top level
 // nand2mario
@@ -240,9 +242,11 @@ assign fclk = sys_clk;
 wire [31:0] status;
 
 
+wire video_pause;              // frame lock with HDMI (nes_video)
+
 // Main NES machine
 NES nes(
-    .clk(clk), .reset_nes(reset_nes), .cold_reset(1'b0),
+    .clk(clk), .reset_nes(reset_nes), .cold_reset(1'b0), .pause(video_pause),
     .sys_type(system_type), .nes_div(nes_ce),
     .mapper_flags(mapper_flags),
     .sample(sample), .color(color),
@@ -356,18 +360,17 @@ GameData game_data(
 
 // For physical board, there's HDMI, iosys, joypads, and USB
 wire overlay;                   // iosys controls overlay
-wire [10:0] overlay_x;
-wire [9:0]  overlay_y;
-wire [15:0] overlay_color;      // BGR5
+wire osd_we;                    // menu text writes
+wire [31:0] osd_wdata;
+wire [1:0] shape;               // pixel shape
 
 // HDMI output
-nes2hdmi u_hdmi (     // purple: RGB=440064 (010001000_00000000_01100100), BGR5=01100_00000_01000
-    .clk(clk), .resetn(sys_resetn),
-    .color(color), .cycle(cycle), 
-    .scanline(scanline), .sample(sample >> 1),
-    .overlay(overlay), .overlay_x(overlay_x), .overlay_y(overlay_y),
-    .overlay_color(overlay_color),
-    .clk_pixel(hclk), .clk_5x_pixel(hclk5),
+nes_video video (
+    .clk(clk), .resetn(sys_resetn), .running(~reset_nes),
+    .color(color), .cycle(cycle), .scanline(scanline), .sample(sample >> 1),
+    .pause(video_pause),
+    .shape(shape), .overlay(overlay), .osd_we(osd_we), .osd_wdata(osd_wdata),
+    .hclk(hclk), .hclk5(hclk5),
     .tmds_clk_n(tmds_clk_n), .tmds_clk_p(tmds_clk_p),
     .tmds_d_n(tmds_d_n), .tmds_d_p(tmds_d_p)
 );
@@ -455,12 +458,11 @@ always @(posedge clk) begin            // RV
     end
 end
 
-iosys #(.CORE_ID(1))
+iosys #(.CORE_ID(1), .ROM_SLOW(1))
     iosys (
-    .clk(clk), .hclk(hclk), .resetn(sys_resetn),
+    .clk(clk), .resetn(sys_resetn),
 
-    .overlay(overlay), .overlay_x(overlay_x), .overlay_y(overlay_y),
-    .overlay_color(overlay_color),
+    .overlay(overlay), .osd_we(osd_we), .osd_wdata(osd_wdata), .shape(shape),
     .joy1(joy1_btns), .joy2(joy2_btns),
 
     .rom_loading(loading), .rom_do(loader_do), .rom_do_valid(loader_do_valid), 

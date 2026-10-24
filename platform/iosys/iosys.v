@@ -1,4 +1,7 @@
 // Modified for retro-fpga (2026-10-23): no COLOR_LOGO (the menu has no logo). See git history.
+// Modified for retro-fpga (2026-10-24): one iosys for both cores (ROM_SLOW for NES). The menu
+// is drawn by platform/video/osd.v: iosys passes on the text register writes (osd_we,
+// osd_wdata) and has a video register for the pixel shape at 0x0200_0080. See git history.
 // IOSys - PicoRV32-based IO subsystem for snestang
 //
 // IOSys provides the following functionality,
@@ -33,19 +36,19 @@
 
 module iosys #(
     parameter FREQ=21_477_000,
-    parameter [15:0] CORE_ID=1      // 1: nestang, 2: snestang
+    parameter [15:0] CORE_ID=1,     // 1: nestang, 2: snestang
+    parameter ROM_SLOW=0            // 1: one ROM byte every 4 cycles (NES loader), 0: every cycle
 )
 (
     input clk,                      // SNES mclk
-    input hclk,                     // hdmi clock
 //    input clkref,                   // 1/2 of mclk, for sdram access synchronization
     input resetn,
 
     // OSD display interface
     output overlay,
-    input [7:0] overlay_x,          // 0-255
-    input [7:0] overlay_y,          // 0-223
-    output [14:0] overlay_color,    // BGR5
+    output osd_we,                  // text register write, see platform/video/osd.v
+    output [31:0] osd_wdata,
+    output reg [1:0] shape = 0,     // pixel shape: 0 = 8:7, 1 = square, 2 = 4:3
     input [11:0] joy1,              // joystick 1: (R L X A RT LT DN UP START SELECT Y B)
     input [11:0] joy2,              // joystick 2
 
@@ -183,8 +186,11 @@ wire        spiflash_reg_byte_sel = mem_valid && (mem_addr == 32'h0200_0070);
 wire        spiflash_reg_word_sel = mem_valid && (mem_addr == 32'h0200_0074);
 wire        spiflash_reg_ctrl_sel = mem_valid && (mem_addr == 32'h0200_0078);
 
-assign mem_ready = ram_ready || textdisp_reg_char_sel || simpleuart_reg_div_sel || 
+wire        video_reg_sel = mem_valid && (mem_addr == 32'h0200_0080);         // [1:0] pixel shape
+
+assign mem_ready = ram_ready || textdisp_reg_char_sel || simpleuart_reg_div_sel ||
             romload_reg_ctrl_sel || romload_reg_data_sel || joystick_reg_sel || time_reg_sel || cycle_reg_sel || id_reg_sel ||
+            video_reg_sel ||
             (simpleuart_reg_dat_sel && !simpleuart_reg_dat_wait) ||
             ((simplespimaster_reg_byte_sel || simplespimaster_reg_word_sel) && !simplespimaster_reg_wait) ||
             (spiflash_reg_byte_sel || spiflash_reg_word_sel) && !spiflash_reg_wait ||
@@ -197,6 +203,7 @@ assign mem_rdata = ram_ready ? ram_rdata :
         time_reg_sel ? time_reg :
         cycle_reg_sel ? cycle_reg :
         id_reg_sel ? {16'b0, CORE_ID} :
+        video_reg_sel ? {30'b0, shape} :
         (simplespimaster_reg_byte_sel | simplespimaster_reg_word_sel) ? simplespimaster_reg_do : 
         (spiflash_reg_byte_sel | spiflash_reg_word_sel) ? spiflash_reg_do :
         32'h 0000_0000;
@@ -216,13 +223,14 @@ picorv32 #(
     .mem_wdata(mem_wdata), .mem_wstrb(mem_wstrb), .mem_rdata(mem_rdata)
 );
 
-// text display @ 0x0200_0000
-textdisp disp (
-    .clk(clk), .hclk(hclk), .resetn(resetn),
-    .x(overlay_x), .y(overlay_y), .color(overlay_color),
-    .reg_char_we(textdisp_reg_char_sel ? mem_wstrb : 4'b0),
-    .reg_char_di(mem_wdata) 
-);
+// text display @ 0x0200_0000, drawn by platform/video/osd.v
+assign osd_we = textdisp_reg_char_sel && mem_wstrb[0];
+assign osd_wdata = mem_wdata;
+
+// pixel shape @ 0x0200_0080
+always @(posedge clk)
+    if (video_reg_sel && mem_wstrb[0])
+        shape <= mem_wdata[1:0];
 
 // toggle overlay display on/off
 reg overlay_buf = 1;
@@ -275,9 +283,31 @@ simplespimaster simplespi (
 );
 
 // ROM loading I/O @ 0x02000_0030
-reg [1:0] rom_cnt;
 reg [31:0] rom_do_buf;
 assign rom_do = rom_do_buf[7:0];
+generate
+if (ROM_SLOW) begin : g_rom_slow
+// 2 cycles for a byte and 2 cycles idle (NES game loader)
+reg [3:0] rom_cnt;
+always @(posedge clk) begin
+    if (rom_cnt != 0)
+        rom_cnt <= rom_cnt - 2'd1;
+    // data register
+    if (romload_reg_data_sel && mem_wstrb) begin
+        rom_do_buf <= mem_wdata;
+        rom_cnt <= 4'd15;
+        rom_do_valid <= 1;
+    end
+    if (rom_cnt[1:0] == 2'd3)
+        rom_do_valid <= 0;
+    if (rom_cnt[1:0] == 2'd0 && rom_cnt[3:2] != 0) begin
+        rom_do_buf[23:0] <= rom_do_buf[31:8];
+        rom_do_valid <= 1;
+    end
+end
+end else begin : g_rom_fast
+// one byte per cycle
+reg [1:0] rom_cnt;
 always @(posedge clk) begin
     rom_do_valid <= 0;
     // data register
@@ -292,6 +322,8 @@ always @(posedge clk) begin
         rom_do_valid <= 1;
     end
 end
+end
+endgenerate
 always @(posedge clk) begin
     if (romload_reg_ctrl_sel && mem_wstrb) begin
         // control register

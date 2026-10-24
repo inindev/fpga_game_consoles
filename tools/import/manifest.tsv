@@ -41,14 +41,10 @@ platform/input/usb_hid_host/usb_hid_host_rom.v	nestang	869140ca36953e6f0395de357
 platform/io/uart_tx_v2.v	nestang	869140ca36953e6f0395de357a86c90823f84585	src/uart_tx_V2.v	identical in snestang v0.9
 platform/iosys/gowin_dpb_menu.ipc	nestang	869140ca36953e6f0395de357a86c90823f84585	src/iosys/gowin_dpb_menu.ipc	settings for gowin_dpb_menu.v (identical in snestang v0.9)
 platform/iosys/gowin_dpb_menu.mod	nestang	869140ca36953e6f0395de357a86c90823f84585	src/iosys/gowin_dpb_menu.mod	GowinModGen input for gowin_dpb_menu.v (identical in snestang v0.9)
-platform/iosys/nes/gowin_dpb_menu.v	nestang	869140ca36953e6f0395de357a86c90823f84585	src/iosys/gowin_dpb_menu.v	
-platform/iosys/nes/iosys.v	nestang	869140ca36953e6f0395de357a86c90823f84585	src/iosys/iosys.v	
-platform/iosys/nes/textdisp.v	nestang	869140ca36953e6f0395de357a86c90823f84585	src/iosys/textdisp.v	
+platform/iosys/gowin_dpb_menu.v	snestang	58bb70aba31eb3055aceba910dc1d5c407da853b	src/iosys/gowin_dpb_menu.v	shared by both cores; nestang's differs only in the logo bitmap, which is not drawn
+platform/iosys/iosys.v	snestang	58bb70aba31eb3055aceba910dc1d5c407da853b	src/iosys/iosys.v	shared by both cores (nestang's ROM byte pacing is the ROM_SLOW parameter)
 platform/iosys/simplespimaster.v	nestang	869140ca36953e6f0395de357a86c90823f84585	src/iosys/simplespimaster.v	identical in snestang v0.9
 platform/iosys/simpleuart.v	nestang	869140ca36953e6f0395de357a86c90823f84585	src/iosys/simpleuart.v	identical in snestang v0.9
-platform/iosys/snes/gowin_dpb_menu.v	snestang	58bb70aba31eb3055aceba910dc1d5c407da853b	src/iosys/gowin_dpb_menu.v	
-platform/iosys/snes/iosys.v	snestang	58bb70aba31eb3055aceba910dc1d5c407da853b	src/iosys/iosys.v	
-platform/iosys/snes/textdisp.v	snestang	58bb70aba31eb3055aceba910dc1d5c407da853b	src/iosys/textdisp.v	
 platform/iosys/spi_master.v	nestang	869140ca36953e6f0395de357a86c90823f84585	src/iosys/spi_master.v	identical in snestang v0.9
 platform/iosys/spiflash.v	nestang	869140ca36953e6f0395de357a86c90823f84585	src/iosys/spiflash.v	identical in snestang v0.9
 platform/memory/dpram.v	nestang	869140ca36953e6f0395de357a86c90823f84585	src/dpram.v	used by the Namco mapper
@@ -57,8 +53,6 @@ platform/memory/sdram_nes.v	nestang	869140ca36953e6f0395de357a86c90823f84585	src
 platform/memory/sdram_snes.v	snestang	58bb70aba31eb3055aceba910dc1d5c407da853b	src/nano20k/sdram_nano.v	SNES SDRAM controller for the Nano 20K
 platform/video/assets/font.vh	nestang	869140ca36953e6f0395de357a86c90823f84585	src/assets/font.vh	identical to snestang src/font.vh
 platform/video/assets/logo.py	nestang	869140ca36953e6f0395de357a86c90823f84585	src/assets/logo.py	generates the menu logo bitmap
-platform/video/nes2hdmi.sv	nestang	869140ca36953e6f0395de357a86c90823f84585	src/nes2hdmi.sv	
-platform/video/snes2hdmi.v	snestang	58bb70aba31eb3055aceba910dc1d5c407da853b	src/snes2hdmi_nano.v	Nano 20K variant of snes2hdmi
 systems/nes/cartridge/cart.sv	nestang	869140ca36953e6f0395de357a86c90823f84585	src/cart.sv	
 systems/nes/cartridge/eeprom_24c0x.sv	nestang	869140ca36953e6f0395de357a86c90823f84585	src/EEPROM_24C0x.sv	
 systems/nes/cartridge/game_loader.v	nestang	869140ca36953e6f0395de357a86c90823f84585	src/game_loader.v	

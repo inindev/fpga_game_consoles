@@ -49,7 +49,8 @@ tools/import/             how this snapshot was assembled (manifest, patches)
 ```
 
 Where a shared part still differs between the two systems, it lives in a `nes/` or
-`snes/` subfolder (for example `platform/iosys/nes/`) until the two are unified and tested.
+`snes/` subfolder until the two are unified and tested. In `platform/video/`, each system
+has a small adapter (`nes_video.sv`, `snes_video.v`) in front of the shared `video_out.v`.
 
 ### Suggested reading order
 
@@ -133,14 +134,29 @@ the `.cst` files.
 Each socket also needs a 15 kΩ resistor from D+ to GND and one from D- to GND. Pins 54/56
 are shared with the onboard audio amplifier, so the cores keep it switched off (pin 51).
 
+### Picture
+
+Both cores output 1280x720 at 60 Hz through the same scaler (`platform/video/video_out.v`):
+
+- Each source line becomes exactly 3 output lines: 224 lines (SNES) fill 672, 239
+  (SNES overscan mode) 717 and 240 (NES) all 720.
+- Across, **Options › Pixel shape** chooses the width: **8:7** (default, 878 pixels: the
+  pixel shape both consoles produced on a TV), **Square** (768, each pixel exactly 3x3)
+  or **4:3** (fills a 4:3 frame). Where an output pixel falls across two source pixels it
+  is a mix of the two by how much of each it covers, so all source pixels keep the same
+  width. The setting is saved in `/snestang.ini` as `pixel_shape`.
+- The console is locked to the HDMI frame rate: it runs about 0.7% fast and pauses once
+  per frame for about 120 µs, so every frame is shown exactly once and nothing tears.
+- The menu has its own fixed 3x window and shows over the game dimmed to 1/4.
+
 ## Status
 
 Verified on hardware (Tang Nano 20K), built with Gowin V1.9.11.03 Education:
 
 | Core | Logic | Block RAM | HDMI clock (74.25 MHz needed) |
 |---|---|---|---|
-| NES | 65% | 30/46 | 76.9 MHz |
-| SNES | 91% | 44/46 | 94.5 MHz |
+| NES | 68% | 10/46 | 74.7 MHz |
+| SNES | 98% | 46/46 | 74.9 MHz |
 
 ## Conventions
 

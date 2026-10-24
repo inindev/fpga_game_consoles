@@ -22,6 +22,7 @@
 #define reg_spiflash_byte  (*(volatile uint32_t*)0x02000070)
 #define reg_spiflash_word  (*(volatile uint32_t*)0x02000074)
 #define reg_spiflash_ctrl  (*(volatile uint32_t*)0x02000078)
+#define reg_video          (*(volatile uint32_t*)0x02000080)   // [1:0] pixel shape: 0 = 8:7, 1 = square, 2 = 4:3
 
 // Standard library for PicoRV32 RV32I softcore
 

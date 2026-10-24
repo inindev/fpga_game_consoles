@@ -2,6 +2,8 @@
 // S-DD1, Cx4) when loading a SNES ROM. See git history.
 // Modified for retro-fpga (2026-10-23): the menu shows the git commit and build date, centered
 // on row 26 (FW_VERSION from version.h, written by the makefile). See git history.
+// Modified for retro-fpga (2026-10-24): "Pixel shape" option (8:7, square, 4:3), saved as
+// pixel_shape in the option file and sent to the video hardware (reg_video). See git history.
 // Simple firmware for SNESTang
 // nand2mario, 2024.1
 //
@@ -30,6 +32,14 @@ volatile uint8_t *SNES_BSRAM = (volatile uint8_t *)0x07000000;
 int option_osd_key = OPTION_OSD_KEY_SELECT_RIGHT;
 #define OSD_KEY_CODE (option_osd_key == OPTION_OSD_KEY_SELECT_START ? 0xC : 0x84)
 bool option_backup_bsram = false;
+
+// Pixel shape, same values as reg_video
+#define PIXEL_SHAPE_8_7    0        // what the consoles produced on a TV
+#define PIXEL_SHAPE_SQUARE 1        // sharpest: every pixel exactly 3x3
+#define PIXEL_SHAPE_4_3    2        // fill a 4:3 frame
+#define PIXEL_SHAPE_COUNT  3
+int option_pixel_shape = PIXEL_SHAPE_8_7;
+const char *pixel_shape_names[PIXEL_SHAPE_COUNT] = {"8:7", "Square", "4:3"};
 
 bool snes_running;
 int snes_ramsize;
@@ -79,6 +89,10 @@ int load_option()  {
                 option_backup_bsram = true;
             else
                 option_backup_bsram = false;
+        } else if (strcmp(key, "pixel_shape") == 0) {
+            for (int i = 0; i < PIXEL_SHAPE_COUNT; i++)
+                if (strcasecmp(value, pixel_shape_names[i]) == 0)
+                    option_pixel_shape = i;
         } else {
             // just ignore unknown keys
         }
@@ -111,7 +125,11 @@ int save_option() {
         f_puts("true\n", &f);
     else
         f_puts("false\n", &f);
-        
+
+    f_puts("pixel_shape=", &f);
+    f_puts(pixel_shape_names[option_pixel_shape], &f);
+    f_puts("\n", &f);
+
 save_options_close:
     f_close(&f);
     // hide snestang.ini in dir list
@@ -603,11 +621,15 @@ void menu_options() {
             print("Yes");
         else
             print("No");
+        cursor(2, 16);
+        print("Pixel shape:");
+        cursor(16, 16);
+        print(pixel_shape_names[option_pixel_shape]);
 
         delay(300);
 
         for (;;) {
-            if (joy_choice(12, 4, &choice, OSD_KEY_CODE) == 1) {
+            if (joy_choice(12, 5, &choice, OSD_KEY_CODE) == 1) {
                 if (choice == 0) {
                     return;
                 } else if (choice == 1) {
@@ -620,6 +642,9 @@ void menu_options() {
                             option_osd_key = OPTION_OSD_KEY_SELECT_START;
                     } else if (choice == 3) {
                         option_backup_bsram = !option_backup_bsram;
+                    } else if (choice == 4) {
+                        option_pixel_shape = (option_pixel_shape + 1) % PIXEL_SHAPE_COUNT;
+                        reg_video = option_pixel_shape;
                     }
                     status("Saving options...");
                     if (save_option()) {
@@ -1079,6 +1104,7 @@ int main() {
         // clear();
         // message("Cannot open option file",1);
     }
+    reg_video = option_pixel_shape;
 
     for (;;) {
         // main menu
@@ -1098,7 +1124,7 @@ int main() {
         print("3) Options\n");
         // cursor(2, 15);
         // print("4) Verify core\n");
-        // Row 26 is drawn in charcoal by the display hardware (textdisp.v VERSION_ROW).
+        // Row 26 is drawn in charcoal by the display hardware (osd.v VERSION_ROW).
         cursor((32 - (sizeof(FW_VERSION) - 1)) / 2, 26);
         print(FW_VERSION);
 

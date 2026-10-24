@@ -1,5 +1,7 @@
 // Modified for retro-fpga (2026-10-23): USB gamepads on the pin header (USB1/USB2 in config.v),
 // alongside the DualShock 2 ports. See git history.
+// Modified for retro-fpga (2026-10-24): video through snes_video.v (shared scaler and menu);
+// shared iosys. See git history.
 /* 
  * Top level for snestang
  * nand2mario, 2023.6
@@ -675,31 +677,29 @@ controller_adapter joy2_adapter (
 assign snes_joy1_di[1] = 0;  // P3
 assign snes_joy2_di[1] = 0;  // P4
 
-wire [14:0] overlay_color;
-wire [7:0] overlay_x;
-wire [7:0] overlay_y;
+wire osd_we;                    // menu text writes
+wire [31:0] osd_wdata;
+wire [1:0] shape;               // pixel shape
 
 wire [7:0] dbg_dat_out_loader;
 
-snes2hdmi s2h(
-    .clk(mclk), .resetn(resetn), .snes_refresh(refresh),
-    .pause_snes_for_frame_sync(pause_snes_for_frame_sync),
-    .dotclk(dotclk), .hblank(~hblankn),.vblank(~vblankn),.rgb5(rgb_out),
-    .xs(x_out), .ys(y_out), 
-    .overlay(overlay), .overlay_x(overlay_x), .overlay_y(overlay_y),
-    .overlay_color(overlay_color), 
-    .audio_l(audio_l), .audio_r(audio_r), .audio_ready(audio_ready), .audio_en(audio_en),
-    .clk_pixel(hclk),.clk_5x_pixel(hclk5),.locked(1'b1),
+snes_video video (
+    .clk(mclk), .resetn(resetn), .running(loaded),
+    .dotclk(dotclk), .hblank(~hblankn), .vblank(~vblankn), .rgb5(rgb_out),
+    .xs(x_out), .ys(y_out), .snes_refresh(refresh),
+    .pause(pause_snes_for_frame_sync),
+    .audio_l(audio_l), .audio_r(audio_r), .audio_ready(audio_ready),
+    .shape(shape), .overlay(overlay), .osd_we(osd_we), .osd_wdata(osd_wdata),
+    .hclk(hclk), .hclk5(hclk5),
     .tmds_clk_n(tmds_clk_n), .tmds_clk_p(tmds_clk_p),
     .tmds_d_n(tmds_d_n), .tmds_d_p(tmds_d_p)
 );
 
 // IOSys for menu, rom loading...
 iosys #(.CORE_ID(2)) iosys (        // CORE ID 2: SNESTang
-    .clk(mclk), .hclk(hclk), /*.clkref(DOTCLK),*/ .resetn(resetn),
+    .clk(mclk), /*.clkref(DOTCLK),*/ .resetn(resetn),
 
-    .overlay(overlay), .overlay_x(overlay_x), .overlay_y(overlay_y),
-    .overlay_color(overlay_color),
+    .overlay(overlay), .osd_we(osd_we), .osd_wdata(osd_wdata), .shape(shape),
     .joy1(joy1_btns), .joy2(joy2_btns),
 
     .rom_loading(loading), .rom_do(loader_do), .rom_do_valid(loader_do_valid), 
