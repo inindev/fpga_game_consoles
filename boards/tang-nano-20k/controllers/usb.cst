@@ -1,0 +1,13 @@
+// USB gamepads (low-speed), top of the right-hand header. Written for retro-fpga.
+// Added to a core's pin file when CONTROLLERS includes "usb" (see makefile).
+// Each port: a USB-A socket with VBUS to the 5V pin, GND to GND, and 15K resistors from D+
+// to GND and from D- to GND. Pins 54/56 are shared with the onboard audio amplifier's I2S
+// inputs; the amplifier is held off by pa_en in the core's own pin file.
+IO_LOC "usb1_dp" 42;
+IO_PORT "usb1_dp" IO_TYPE=LVCMOS33 PULL_MODE=DOWN DRIVE=8 BANK_VCCIO=3.3;
+IO_LOC "usb1_dm" 41;
+IO_PORT "usb1_dm" IO_TYPE=LVCMOS33 PULL_MODE=DOWN DRIVE=8 BANK_VCCIO=3.3;
+IO_LOC "usb2_dp" 56;
+IO_PORT "usb2_dp" IO_TYPE=LVCMOS33 PULL_MODE=DOWN DRIVE=8 BANK_VCCIO=3.3;
+IO_LOC "usb2_dm" 54;
+IO_PORT "usb2_dm" IO_TYPE=LVCMOS33 PULL_MODE=DOWN DRIVE=8 BANK_VCCIO=3.3;

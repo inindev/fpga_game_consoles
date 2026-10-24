@@ -1,16 +1,15 @@
 
 // Modified for retro-fpga (2026-10-23): USB1/USB2 gamepad ports. See git history.
+// Modified for retro-fpga (2026-10-24): controller defines come from make (CONTROLLERS). See git history.
 `define NANO
 `define SDRAM_3CH
 `define CHIP_DSPn
 // `define CHIP_GSU
 
-`define CONTROLLER_DS2
-`define CONTROLLER_SNES
-
-// USB gamepads on the pin header (pins and wiring in snes.cst); all controllers are OR'd per player
-`define USB1
-`define USB2
+// Controllers: CONTROLLER_SNES, CONTROLLER_DS2, USB1, USB2. make writes them to
+// controllers.vh in the build folder from CONTROLLERS (default: all); see makefile.
+// All controllers built in are OR'd per player.
+`include "controllers.vh"
 
 // `define DISABLE_SNES
 // `define DISABLE_SMP

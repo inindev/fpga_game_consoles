@@ -2,7 +2,9 @@
 // alongside the DualShock 2 ports. See git history.
 // Modified for retro-fpga (2026-10-24): video through snes_video.v (shared scaler and menu);
 // shared iosys. See git history.
-/* 
+// Modified for retro-fpga (2026-10-24): controllers chosen by make (CONTROLLERS); pa_en driven
+// low in every build. See git history.
+/*
  * Top level for snestang
  * nand2mario, 2023.6
  */
@@ -85,8 +87,8 @@ module snestang_top (
     // USB gamepad 2 (low-speed)
     inout usb2_dp,
     inout usb2_dm,
-    output pa_en,           // onboard audio amp enable: held off, its I2S inputs share USB2's pins
 `endif
+    output pa_en,           // onboard audio amp enable: held off, its I2S inputs share USB2's pins
 
     // SDRAM
     output O_sdram_clk,
@@ -662,8 +664,10 @@ usb_hid_host #(.CE_NUM(5), .CE_DEN(36)) usb2 (
 );
 always @(posedge mclk) {usb2_btns_s2, usb2_btns_s1} <= {usb2_btns_s1, usb2_btns};
 assign joy2_btns = usb2_btns_s2;
-assign pa_en = 1'b0;                    // keep the onboard audio amp off
 `endif
+
+// Keep the onboard audio amp off in every build (its I2S inputs share USB2's pins 54/56)
+assign pa_en = 1'b0;
 
 // output button presses to SNES
 controller_adapter joy1_adapter (

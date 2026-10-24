@@ -2,6 +2,8 @@
 // alongside the DualShock 2 ports; no menu logo color. See git history.
 // Modified for retro-fpga (2026-10-24): video through nes_video.sv (line buffer, frame lock,
 // shared scaler and menu); shared iosys. See git history.
+// Modified for retro-fpga (2026-10-24): controllers chosen by make (CONTROLLERS); pa_en driven
+// low in every build. See git history.
 //
 // NESTang top level
 // nand2mario
@@ -84,8 +86,8 @@ module nestang_top (
     // USB gamepad 2 (low-speed)
     inout usb2_dp,
     inout usb2_dm,
-    output pa_en,           // onboard audio amp enable: held off, its I2S inputs share USB2's pins
 `endif
+    output pa_en,           // onboard audio amp enable: held off, its I2S inputs share USB2's pins
 
     // HDMI TX
     output       tmds_clk_n,
@@ -555,10 +557,12 @@ usb_hid_host #(.CE_NUM(5), .CE_DEN(27)) usb2 (
 );
 always @(posedge clk) {usb2_btns_s2, usb2_btns_s1} <= {usb2_btns_s1, usb2_btns};
 assign joy2_btns = usb2_btns_s2;
-assign pa_en = 1'b0;                    // keep the onboard audio amp off
 `endif
 
 `endif
+
+// Keep the onboard audio amp off in every build (its I2S inputs share USB2's pins 54/56)
+assign pa_en = 1'b0;
 
 //assign led = ~{~UART_RXD, loader_done};
 //assign led = ~{~UART_RXD, usb_conerr, loader_done};

@@ -3,6 +3,13 @@
 # File list and options follow snestang v0.9 build.tcl (nano20k), in the same order.
 
 set root [file normalize [file join [file dirname [info script]] .. ..]]
+
+# Set by the makefile (CONTROLLERS): output name, and the pin file it generated in the build
+# folder, next to controllers.vh (which config.v includes; that folder is the include path).
+foreach v {RF_NAME RF_CST} {
+    if {![info exists ::env($v)]} { error "$v not set: build with make (see makefile)" }
+}
+
 set_device GW2AR-LV18QN88C8/I7 -device_version C
 
 add_file -type verilog "$root/boards/tang-nano-20k/snes/config.v"
@@ -76,12 +83,13 @@ add_file -type verilog "$root/systems/snes/chips/s-smp/spc700/spc700.v"
 add_file -type verilog "$root/systems/snes/chips/s-wram/swram.v"
 add_file -type verilog "$root/platform/io/uart_tx_v2.v"
 
-add_file -type cst "$root/boards/tang-nano-20k/snes/snes.cst"
+add_file -type cst $::env(RF_CST)
 add_file -type sdc "$root/boards/tang-nano-20k/snes/snes.sdc"
 
 set_option -synthesis_tool gowinsynthesis
 set_option -top_module snestang_top
 set_option -verilog_std sysv2017
+set_option -include_path [file dirname $::env(RF_CST)]
 set_option -rw_check_on_ram 1
 set_option -place_option 2
 set_option -use_mspi_as_gpio 1
@@ -91,6 +99,6 @@ set_option -use_done_as_gpio 1
 set_option -use_i2c_as_gpio 1
 set_option -use_cpu_as_gpio 1
 set_option -multi_boot 1
-set_option -output_base_name snes_nano20k
+set_option -output_base_name $::env(RF_NAME)
 
 run all

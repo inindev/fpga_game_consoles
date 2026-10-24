@@ -71,8 +71,10 @@ export GOWIN_HOME=/path/to/Gowin/IDE           # tested: V1.9.11.03 Education
 make nes          # -> build/out/nes_nano20k.{fs,bin}    (~3 min)
 make snes         # -> build/out/snes_nano20k.{fs,bin}   (~4 min)
 make firmware RISCV=/path/to/riscv-none-elf    # -> build/out/firmware.bin
-make sdcard       # -> build/out/sdcard/cores/
+make sdcard       # -> build/out/sdcard/cores/ (every NES/SNES core built)
 ```
+
+To build only some controller types, see [Controllers](#controllers).
 
 `build/gowin/gw.sh` runs Gowin headless (Qt `offscreen`) inside an empty network
 namespace (`unshare -rn`), so the vendor tool can't reach the network.
@@ -115,14 +117,30 @@ Test a build without touching flash: `openFPGALoader -b tangnano20k build/out/ne
 
 ### Controllers
 
-Both cores read DualShock 2 pads, SNES/NES pads and low-speed USB gamepads at the same
-time; all inputs for a player are combined, so use whichever is plugged in. Pins are in
-the `.cst` files.
+By default both cores read DualShock 2 pads, SNES/NES pads and low-speed USB gamepads at
+the same time; all inputs for a player are combined, so use whichever is plugged in.
+Pins are in `boards/tang-nano-20k/controllers/` (`ds2.cst`, `snes.cst`, `usb.cst`).
 
 - **DualShock 2**: Sipeed's joystick adapters on the bottom six pins of each header
   (player 1 left, player 2 right).
+- **SNES/NES pads**: left header positions 8–13, three pins per player: player 1 at 8–10
+  (clock 27, latch 28, data 25), player 2 at 11–13 (clock 26, latch 29, data 30). These
+  positions have no power pins; NESTang powers the pads from the right header (5V at
+  position 1, GND at 2).
 - **USB gamepads** (low-speed only, no hubs; mapped for 0810:0001 SNES-style pads): two
   USB-A sockets wired to the top of the right-hand header.
+
+`CONTROLLERS` builds in only the types named (`usb`, `ds2`, `snes`); the pins of the
+others are left unused. Several of those pins are shared with other parts of the board
+(`boards/tang-nano-20k/pinout.md`): pins 25/26 with HDMI CEC/HPD, 52/53 with the HDMI EDID
+lines and 17–20 with LEDs. The default build keeps the plain file name; otherwise the
+chosen types are appended, in the order `usb`, `ds2`, `snes`:
+
+```sh
+make nes snes                      # all three -> nes_nano20k.bin, snes_nano20k.bin
+make nes snes CONTROLLERS=usb      # USB only  -> nes_nano20k_usb.bin, snes_nano20k_usb.bin
+make nes CONTROLLERS="usb ds2"     # -> nes_nano20k_usb_ds2.bin
+```
 
 | Header pin | USB |
 |---|---|
@@ -133,6 +151,8 @@ the `.cst` files.
 
 Each socket also needs a 15 kΩ resistor from D+ to GND and one from D- to GND. Pins 54/56
 are shared with the onboard audio amplifier, so the cores keep it switched off (pin 51).
+Full wiring, with a diagram and a diagnostic core for checking pads:
+[boards/tang-nano-20k/usb-gamepads.md](boards/tang-nano-20k/usb-gamepads.md).
 
 ### Picture
 

@@ -1,0 +1,24 @@
+// DualShock 2 pads through Sipeed's 6-pin joystick adapters. Written for retro-fpga
+// (pins as in NESTang/SNESTang). Added to a core's pin file when CONTROLLERS includes "ds2"
+// (see makefile).
+// Player 1: left header positions 15-20 (pins 17-20, then 3V3 and GND).
+// Player 2: right header positions 20-15 (adapter reversed: pins 52, 53, 71, 72, then 3V3, GND).
+// Shared wiring (boards/tang-nano-20k/pinout.md): pins 17-20 also drive LED2-LED5; pins 52/53
+// are also the HDMI DDC (EDID) data/clock lines.
+IO_LOC "ds_clk" 17;
+IO_PORT "ds_clk" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
+IO_LOC "ds_miso" 19;
+IO_PORT "ds_miso" IO_TYPE=LVCMOS33 PULL_MODE=UP BANK_VCCIO=3.3;
+IO_LOC "ds_mosi" 20;
+IO_PORT "ds_mosi" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
+IO_LOC "ds_cs" 18;
+IO_PORT "ds_cs" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
+
+IO_LOC "ds_clk2" 52;
+IO_PORT "ds_clk2" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
+IO_LOC "ds_miso2" 71;
+IO_PORT "ds_miso2" IO_TYPE=LVCMOS33 PULL_MODE=UP BANK_VCCIO=3.3;
+IO_LOC "ds_mosi2" 53;
+IO_PORT "ds_mosi2" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
+IO_LOC "ds_cs2" 72;
+IO_PORT "ds_cs2" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
