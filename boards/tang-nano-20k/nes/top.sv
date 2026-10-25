@@ -4,6 +4,8 @@
 // shared scaler and menu); shared iosys. See git history.
 // Modified for retro-fpga (2026-10-24): controllers chosen by make (CONTROLLERS); pa_en driven
 // low in every build. See git history.
+// Modified for retro-fpga (2026-10-25): NES sample passed to nes_video unscaled (it converts it
+// for HDMI). See git history.
 //
 // NESTang top level
 // nand2mario
@@ -369,7 +371,7 @@ wire [1:0] shape;               // pixel shape
 // HDMI output
 nes_video video (
     .clk(clk), .resetn(sys_resetn), .running(~reset_nes),
-    .color(color), .cycle(cycle), .scanline(scanline), .sample(sample >> 1),
+    .color(color), .cycle(cycle), .scanline(scanline), .sample(sample),
     .pause(video_pause),
     .shape(shape), .overlay(overlay), .osd_we(osd_we), .osd_wdata(osd_wdata),
     .hclk(hclk), .hclk5(hclk5),

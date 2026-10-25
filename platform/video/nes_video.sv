@@ -14,7 +14,7 @@ module nes_video (
     input      [5:0]  color,            // palette index of the current pixel
     input      [8:0]  cycle,
     input      [8:0]  scanline,
-    input      [15:0] sample,
+    input      [15:0] sample,           // APU/cartridge mix, inverted: silence is the highest value
     output reg        pause = 0,        // hold the NES (frame lock)
 
     // Settings and menu (iosys)
@@ -72,7 +72,8 @@ always @(posedge clk) begin
     end
 end
 
-// Audio: 48 kHz sample clock; the sample crosses into hclk through two flip-flops
+// Audio: 48 kHz sample clock; nes_audio_hdmi.sv brings the sample into hclk and removes its
+// DC level (silence = 0), as the NES's own output filters do
 localparam AUDIO_CLK_DELAY = 74250 * 1000 / AUDIO_RATE / 2;
 reg [$clog2(AUDIO_CLK_DELAY)-1:0] audio_divider = 0;
 reg clk_audio = 0;
@@ -85,8 +86,12 @@ always @(posedge hclk) begin
     end
 end
 
-reg [15:0] sample_s1, sample_s2;
-always @(posedge hclk) {sample_s2, sample_s1} <= {sample_s1, sample};
+wire signed [15:0] audio;
+nes_audio_hdmi nes_audio (
+    .clk(clk), .sample(sample),
+    .clk_pixel(hclk), .clk_audio(clk_audio),
+    .audio(audio)
+);
 
 video_out #(.PIX_FMT(1), .DW(6), .AUDIO_RATE(AUDIO_RATE)) video (
     .clk(clk), .resetn(resetn),
@@ -94,7 +99,7 @@ video_out #(.PIX_FMT(1), .DW(6), .AUDIO_RATE(AUDIO_RATE)) video (
     .src_lines(9'd240), .src_active(running), .shape(shape), .frame_go(frame_go),
     .overlay(overlay), .osd_we(osd_we), .osd_wdata(osd_wdata),
     .hclk(hclk), .hclk5(hclk5),
-    .clk_audio(clk_audio), .audio_l(sample_s2), .audio_r(sample_s2),
+    .clk_audio(clk_audio), .audio_l(audio), .audio_r(audio),
     .tmds_clk_n(tmds_clk_n), .tmds_clk_p(tmds_clk_p), .tmds_d_n(tmds_d_n), .tmds_d_p(tmds_d_p)
 );
 
