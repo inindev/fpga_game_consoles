@@ -168,12 +168,17 @@ Both cores output 1280x720 at 60 Hz through the same scaler (`platform/video/vid
 - The console is locked to the HDMI frame rate: it runs about 0.7% fast and pauses once
   per frame for about 120 µs, so every frame is shown exactly once and nothing tears.
 - The menu has its own fixed 3x window and shows over the game dimmed to 1/4.
+- HDMI carries limited-range RGB (black 16, white 235), the CTA-861 default for 720p, and
+  the AVI InfoFrame says so explicitly. It also flags the content as Game, which asks the
+  TV for minimal processing and latency.
 
 `make nes TEST_PATTERN=1` (or `snes`) builds a core that shows grey steps instead of the
 game (`build/out/nes_nano20k_testpattern.bin`), for checking how a TV handles the HDMI
 colour range: an upper row of 16 near-black patches (0, 4 … 60) and a lower row of 16
-near-white patches (195, 199 … 255). If the TV shows every patch distinct, it receives
-every level; patches that merge into one black or one white are being clipped.
+near-white patches (195, 199 … 255), on the game picture's 0–255 scale. On a TV that
+follows the InfoFrame, the brightness keeps changing across each row, all the way to the
+ends; a row that goes flat at one end means that end is clipped. The menu opens first and
+dims the pattern; load any ROM to close it.
 
 ## Status
 

@@ -95,9 +95,9 @@ always @(posedge hclk) begin
     if (checking && cx < 1280 && cy < 720) begin : chk
         reg [23:0] e;
         if (cy >= Y0 && cy < Y0 + 3 * LINES && cx >= 256 && cx < 1024)
-            e = to_rgb(color_of(shown, (cy - Y0) / 3, (cx - 256) / 3));
+            e = dut.video.limited_rgb(to_rgb(color_of(shown, (cy - Y0) / 3, (cx - 256) / 3)));
         else
-            e = 24'h000000;
+            e = dut.video.limited_rgb(24'h000000);
         if (dut.video.rgb !== e) begin
             frame_errors = frame_errors + 1;
             if (frame_errors <= 3)

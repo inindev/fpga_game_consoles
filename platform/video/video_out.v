@@ -10,6 +10,8 @@
 //   produced), 768 for square pixels, 4 * lines for 4:3.
 // - Menu: 32x28 characters (256x224 pixels) at 3x in a fixed 768x672 window. While the
 //   menu is shown, the game is dimmed to 1/4 behind it.
+// - Output: everything above is on the 0-255 scale; the last stage converts it to limited
+//   range (16-235), which the AVI InfoFrame declares (see stage 7).
 //
 // The core runs slightly faster than HDMI (a frame in 16.545 ms against 16.667 ms). Once a
 // frame the core pauses after writing line 0 and waits for frame_go, which comes when HDMI
@@ -53,7 +55,7 @@ localparam AUDIO_BIT_WIDTH = 16;
 
 // Pipeline depth from the position counter (stage 0) to the rgb register read by the HDMI
 // encoder. Stage 0 works on pixel hpos = cx + LAT so that its result lands on column hpos.
-localparam LAT = 6;
+localparam LAT = 7;
 
 // Line state for the next line is computed here, in horizontal blanking.
 localparam [10:0] LINE_EVT = 11'd1290;
@@ -285,10 +287,11 @@ wire [23:0] osd_color5 = osd_color_d[3];
 // 64x180 pixels each, for checking how a TV handles the HDMI colour range:
 //   upper row (lines 160-339): 0, 4, 8 ... 60       (near black)
 //   lower row (lines 380-559): 195, 199, 203 ... 255 (near white)
-// A TV that shows every patch distinct receives the full range of codes the cores send.
-// A TV that treats the signal as limited range (16-235) merges the patches at 0-16 into
-// one black and those at 235-255 into one white. Positions follow cx/cy within a pixel or
-// two, which doesn't matter for patches this size.
+// Levels are on the 0-255 scale of the game picture; stage 7 converts them to limited range
+// like everything else. A TV that follows the AVI InfoFrame shows all 16 patches in each
+// row distinct; one that clips merges the darkest into one black or the brightest into one
+// white. Positions follow cx/cy within a pixel or two, which doesn't matter for patches this
+// size.
 `ifdef VIDEO_TEST_PATTERN
 wire [10:0] tp_dx  = cx - 11'd128;
 wire        tp_col = cx >= 11'd128 && cx < 11'd1152;    // 16 patches x 64 pixels
@@ -299,8 +302,8 @@ wire [7:0]  tp_lvl = cy >= 10'd160 && cy < 10'd340 ? {2'b00, tp_idx, 2'b00}
 wire [23:0] tp_rgb = tp_col ? {3{tp_lvl}} : 24'h000000;
 `endif
 
-// Stage 6: what the HDMI encoder sends. Black around the picture.
-reg [23:0] rgb;
+// Stage 6: the picture on the 0-255 scale: game, menu, black around the picture.
+reg [23:0] rgb_full;
 always @(posedge hclk) begin
     reg [23:0] game;
 `ifdef VIDEO_TEST_PATTERN
@@ -309,10 +312,31 @@ always @(posedge hclk) begin
     game = on5 && cfg_active ? g5 : 24'h000000;
 `endif
     if (cfg_overlay)
-        rgb <= osd_on5 ? osd_color5 : {2'b0, game[23:18], 2'b0, game[15:10], 2'b0, game[7:2]};
+        rgb_full <= osd_on5 ? osd_color5 : {2'b0, game[23:18], 2'b0, game[15:10], 2'b0, game[7:2]};
     else
-        rgb <= game;
+        rgb_full <= game;
 end
+
+// Stage 7: what the HDMI encoder sends, in limited range (16-235). CTA-861 makes limited
+// range the default for RGB on 720p (a CE format), and the AVI InfoFrame signals it
+// explicitly (packet_picker.sv). 0 becomes 16 (black) and 255 becomes 235 (white).
+// x * 220 / 256 is within 1 of CTA-861's round(x * 219 / 255) for every x, exact at both
+// ends, and needs only two subtractions: x * 220 = x * 256 - x * 32 - x * 4.
+function [7:0] to_limited(input [7:0] x);
+    reg [15:0] p;
+    begin
+        p = {x, 8'd0} - {3'd0, x, 5'd0} - {6'd0, x, 2'd0} + 16'd128;
+        to_limited = 8'd16 + p[15:8];
+    end
+endfunction
+
+function [23:0] limited_rgb(input [23:0] c);
+    limited_rgb = {to_limited(c[23:16]), to_limited(c[15:8]), to_limited(c[7:0])};
+endfunction
+
+reg [23:0] rgb;
+always @(posedge hclk)
+    rgb <= limited_rgb(rgb_full);
 
 //
 // HDMI

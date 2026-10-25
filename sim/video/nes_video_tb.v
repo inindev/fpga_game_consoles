@@ -81,7 +81,7 @@ always @(posedge hclk) begin
     end
     if (checking && cx >= 256 && cx < 1024 && cy < 720) begin : chk
         reg [23:0] e;
-        e = dut.video.nes_palette(color_of(shown, cy / 3, (cx - 256) / 3));
+        e = dut.video.limited_rgb(dut.video.nes_palette(color_of(shown, cy / 3, (cx - 256) / 3)));
         if (dut.video.rgb !== e) begin
             frame_errors = frame_errors + 1;
             if (frame_errors <= 3)

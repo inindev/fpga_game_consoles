@@ -9,6 +9,9 @@
 // 240 lines. Then the menu: characters written through the register interface must show
 // at 3x in the 768x672 window at (256, 24), over the game dimmed to 1/4, the cursor '>' in
 // orange, and the banner row slanted, red on its white box.
+// The output is in limited range: the model's 0-255 values go through the design's
+// conversion (to_limited), which is checked first against CTA-861's
+// round(16 + x * 219 / 255) for all 256 inputs: within 1, and exact at 0 and 255.
 
 `timescale 1ns / 1ps
 
@@ -146,7 +149,7 @@ always @(posedge hclk) begin
     if (checking && dut.cx < 1280 && dut.cy < 720) begin : chk
         reg [23:0] e, r;
         integer ch, d, bad;
-        e = expected(dut.cx, dut.cy);
+        e = dut.limited_rgb(expected(dut.cx, dut.cy));
         r = dut.rgb;
         bad = 0;
         for (ch = 0; ch < 3; ch = ch + 1) begin
@@ -225,6 +228,23 @@ always @(posedge clk) if (frame_go) go_count = go_count + 1;
 integer k, gx, gy, go_before;
 reg [111:0] title;
 initial begin
+    // limited-range conversion against CTA-861's formula
+    begin : lim_check
+        integer x, want, got, lim_errors;
+        lim_errors = 0;
+        for (x = 0; x < 256; x = x + 1) begin
+            want = $rtoi(16.0 + x * 219.0 / 255.0 + 0.5);
+            got = dut.to_limited(x[7:0]);
+            if (got - want > 1 || want - got > 1 || ((x == 0 || x == 255) && got != want)) begin
+                lim_errors = lim_errors + 1;
+                $display("  MISMATCH to_limited(%0d) = %0d, CTA-861 %0d", x, got, want);
+            end
+        end
+        errors = errors + lim_errors;
+        $display("%s limited range: 0..255 -> %0d..%0d", lim_errors ? "FAIL" : "ok  ",
+                 dut.to_limited(8'd0), dut.to_limited(8'd255));
+    end
+
     for (gx = 0; gx < 32; gx = gx + 1)
         for (gy = 0; gy < 28; gy = gy + 1)
             chars[gx][gy] = 0;
