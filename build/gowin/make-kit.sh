@@ -86,10 +86,11 @@ copy ipcore
 find "$DST/ipcore" -mindepth 2 -maxdepth 2 -type d -name doc -exec rm -rf {} +
 
 # 5. Device data for the chosen devices (each has share/device/<dev>, most also
-#    data/device/<dev>), plus the shared device catalogues.
+#    data/device/<dev>), plus the shared device catalogues. LoadingRate.csv lists the
+#    valid values for `set_option -loading_rate` (bitstream load speed from flash).
 copy share/device/device_info.csv share/device/pn_voltage.csv share/firmcore share/config \
      data/config data/device/device_info.csv data/device/device_package.csv \
-     data/ipcores data/iotable data/hardware_core
+     data/device/LoadingRate.csv data/ipcores data/iotable data/hardware_core
 [ "$DEVICES" = all ] && DEVICES="*"
 families=""
 for d in "$SRC"/share/device/*/; do
