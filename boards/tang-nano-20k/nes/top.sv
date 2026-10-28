@@ -6,6 +6,7 @@
 // low in every build. See git history.
 // Modified for retro-fpga (2026-10-25): NES sample passed to nes_video unscaled (it converts it
 // for HDMI). See git history.
+// Modified for retro-fpga (2026-10-28): onboard RGB LED (ws2812) turned off at boot. See git history.
 //
 // NESTang top level
 // nand2mario
@@ -90,6 +91,7 @@ module nestang_top (
     inout usb2_dm,
 `endif
     output pa_en,           // onboard audio amp enable: held off, its I2S inputs share USB2's pins
+    output ws2812,          // onboard RGB LED: sent "off" once at boot
 
     // HDMI TX
     output       tmds_clk_n,
@@ -565,6 +567,20 @@ assign joy2_btns = usb2_btns_s2;
 
 // Keep the onboard audio amp off in every build (its I2S inputs share USB2's pins 54/56)
 assign pa_en = 1'b0;
+
+// Turn the onboard WS2812 RGB LED off: it can latch a color from noise while the FPGA
+// configures. At 27 MHz (sys_clk): hold low 8192 cycles (303 us, a reset), send 24 zero bits
+// (32 cycles = 1.19 us each, high for 11 = 0.41 us), then stay low.
+reg [13:0] ws_cnt = 14'd0;
+reg ws_done = 1'b0;
+reg ws_out = 1'b0;
+always @(posedge sys_clk) if (!ws_done) begin
+    ws_cnt <= ws_cnt + 14'd1;
+    ws_done <= ws_cnt == 14'd8192 + 14'd24 * 14'd32;
+    ws_out <= ws_cnt[13] && ws_cnt[12:5] < 8'd24 && ws_cnt[4:0] < 5'd11;
+end else
+    ws_out <= 1'b0;
+assign ws2812 = ws_out;
 
 //assign led = ~{~UART_RXD, loader_done};
 //assign led = ~{~UART_RXD, usb_conerr, loader_done};

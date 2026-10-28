@@ -2,6 +2,7 @@
 // Modified for retro-fpga (2026-10-23): USB gamepad pins and pa_en added. See git history.
 // Modified for retro-fpga (2026-10-24): controller pins moved to boards/tang-nano-20k/controllers/*.cst;
 // make appends the ones chosen by CONTROLLERS (see makefile). See git history.
+// Modified for retro-fpga (2026-10-28): ws2812 (RGB LED, pin 79) added. See git history.
 IO_LOC "sys_clk" 4;
 IO_PORT "sys_clk" IO_TYPE=LVCMOS33 PULL_MODE=NONE BANK_VCCIO=3.3;
 IO_LOC "s0" 88;
@@ -66,6 +67,11 @@ IO_PORT "flash_spi_clk" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
 // unused pins is input with weak pull-up), enabling the amp.
 IO_LOC "pa_en" 51;
 IO_PORT "pa_en" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
+
+// Onboard WS2812 RGB LED data in. The core sends it "off" once at boot (it can latch a
+// color from noise while the FPGA configures), then holds the line low.
+IO_LOC "ws2812" 79;
+IO_PORT "ws2812" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3;
 
 // Controller pins: appended by make from boards/tang-nano-20k/controllers/. Pins a build
 // leaves out stay inputs with weak pull-up (Gowin's default), the right idle state for the
